@@ -1,5 +1,5 @@
 import toast from "react-hot-toast";
-import React, { useEffect } from "react";
+import React from "react";
 import { Button, Form } from "react-bootstrap";
 import { Agent, AgentDocument } from "./types";
 import { databaseClient } from "../firebaseConfig";
@@ -42,10 +42,6 @@ export const AjouterAgent: React.FC<AjouterAgentProps> = ({ ajouterAgent, hide }
       toast.success("Agent ajouté avec succès");
     } else toast.error("Erreur lors de l'ajout du Agent");
   };
-
-  useEffect(() => {
-    console.log(agent);
-  }, [agent]);
 
   return (
     <Form>

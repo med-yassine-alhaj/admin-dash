@@ -1,10 +1,10 @@
 import { useState } from "react";
+import toast from "react-hot-toast";
 import { Button } from "react-bootstrap";
+import { PointDeCollect } from "./types";
 import { databaseClient } from "../firebaseConfig";
 import { addDoc, collection } from "firebase/firestore";
-import { APIProvider, AdvancedMarker, Map } from "@vis.gl/react-google-maps";
-import toast from "react-hot-toast";
-import { PointDeCollect } from "./types";
+import { MapContainer, Marker, TileLayer, useMapEvents } from "react-leaflet";
 
 type AjouterPointDeCollectProps = {
   hide: () => void;
@@ -14,24 +14,36 @@ type AjouterPointDeCollectProps = {
   }[];
   ajouterPointDeCollect: (pointsDeCollect: PointDeCollect) => void;
 };
+
+const LocationMarker: React.FC<{
+  position: [number, number][];
+  setPosition: (positions: [number, number][]) => void;
+}> = ({ position, setPosition }) => {
+  useMapEvents({
+    click: e => {
+      setPosition([...position, [e.latlng.lat, e.latlng.lng]]);
+    },
+  });
+
+  return position.map((position, index) => {
+    return <Marker key={index} position={position}></Marker>;
+  });
+};
 export const AjouterPointDeCollect: React.FC<AjouterPointDeCollectProps> = ({ hide, ajouterPointDeCollect }) => {
-  const [pointsDeCollect, setPointsDeCollect] = useState<
-    {
-      lat: number;
-      lng: number;
-    }[]
-  >([]);
+  const [position, setPosition] = useState<[number, number][]>([]);
 
   const ajouterPointsDeCollectAuFireBase = async () => {
     await Promise.all(
-      pointsDeCollect.map(async pointDeCollect => {
+      position.map(async pointDeCollect => {
         const result = await addDoc(collection(databaseClient, "pointsDeCollect"), {
-          ...pointDeCollect,
+          lat: pointDeCollect[0],
+          lng: pointDeCollect[1],
         });
 
         ajouterPointDeCollect({
-          ...pointDeCollect,
           id: result.id,
+          lat: pointDeCollect[0],
+          lng: pointDeCollect[1],
         });
       })
     );
@@ -42,45 +54,14 @@ export const AjouterPointDeCollect: React.FC<AjouterPointDeCollectProps> = ({ hi
 
   return (
     <div>
-      <APIProvider apiKey={"AIzaSyD95hqdtsOTo0tnf2Nl1XdcISH-KopLxPc"}>
-        <Map
-          style={{
-            width: "750px",
-            height: "400px",
-          }}
-          defaultCenter={{ lat: 37, lng: 10 }}
-          defaultZoom={8}
-          gestureHandling={"greedy"}
-          disableDefaultUI={true}
-          mapId={"mapAjout"}
-          onClick={e => {
-            if (e.detail.latLng?.lat && e.detail.latLng?.lng)
-              setPointsDeCollect([
-                ...pointsDeCollect,
-                {
-                  lat: e.detail.latLng?.lat,
-                  lng: e.detail.latLng?.lng,
-                },
-              ]);
-          }}
-        >
-          {pointsDeCollect.map((pointDeCollect, index) => {
-            return (
-              <AdvancedMarker
-                key={index}
-                zIndex={1000}
-                position={{ lat: pointDeCollect.lat, lng: pointDeCollect.lng }}
-              />
-            );
-          })}
-        </Map>
-      </APIProvider>
-      <Button
-        style={{
-          marginTop: "20px",
-        }}
-        onClick={ajouterPointsDeCollectAuFireBase}
-      >
+      <MapContainer center={[37, 10]} zoom={8} scrollWheelZoom={true}>
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        <LocationMarker position={position} setPosition={setPosition} />
+      </MapContainer>
+      <Button style={{ marginTop: "20px" }} onClick={ajouterPointsDeCollectAuFireBase}>
         Ajouter
       </Button>
     </div>

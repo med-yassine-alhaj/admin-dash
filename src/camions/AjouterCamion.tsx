@@ -1,5 +1,5 @@
 import toast from "react-hot-toast";
-import React, { useEffect } from "react";
+import React from "react";
 import { Button, Form } from "react-bootstrap";
 import { Camion, CamionDocument } from "./type";
 import { databaseClient } from "../firebaseConfig";
@@ -41,10 +41,6 @@ export const AjouterCamion: React.FC<AjouterCamionProps> = ({ ajouterCamion, hid
       hide();
     } else toast.error("Erreur lors de l'ajout du camion");
   };
-
-  useEffect(() => {
-    console.log(camion);
-  }, [camion]);
 
   return (
     <Form>
