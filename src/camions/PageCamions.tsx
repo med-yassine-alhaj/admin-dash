@@ -1,17 +1,20 @@
-import { CamionDocument } from "./type";
+import { Camion, CamionDocument } from "./type";
 import toast from "react-hot-toast";
 import { MdDelete } from "react-icons/md";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { PiTruckThin } from "react-icons/pi";
 import { AjouterCamion } from "./AjouterCamion";
 import { databaseClient } from "../firebaseConfig";
 import { Button, Card, Col, Container, Modal, Row } from "react-bootstrap";
-import { collection, deleteDoc, doc, getDocs, query } from "firebase/firestore";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { AuthContext } from "../auth/AuthContext";
 
 export const PageCamions = () => {
   const [show, setShow] = useState(false);
   const handleClose = () => setShow(false);
   const handleShow = () => setShow(true);
+
+  const authContext = useContext(AuthContext)!;
 
   const [camions, setCamions] = useState<CamionDocument[]>([]);
 
@@ -20,29 +23,51 @@ export const PageCamions = () => {
   };
 
   const getCamions = async () => {
-    const camionsQuery = query(collection(databaseClient, "camions"));
+    try {
+      const docRef = doc(databaseClient, "users", authContext.userId || "");
 
-    const querySnapshot = await getDocs(camionsQuery);
+      const docSnap = await getDoc(docRef);
 
-    const document = querySnapshot.docs.map(doc => {
-      return {
-        id: doc.id,
-        ...doc.data(),
-      };
-    }) as CamionDocument[];
+      if (docSnap.exists()) {
+        const data = docSnap.data();
 
-    setCamions(document);
+        const camions = data["camions"] as Camion[];
+
+        console.log(camions);
+
+        setCamions(camions);
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error("Erreur lors de la récupération des camions");
+    }
   };
 
-  const deleteCamion = (id: string) => {
-    deleteDoc(doc(databaseClient, "camions", id))
-      .then(() => {
-        setCamions(camions.filter(camion => camion.id !== id));
+  const deleteCamion = async (matricule: string) => {
+    try {
+      const docRef = doc(databaseClient, "users", authContext.userId || "");
+
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+
+        const camions = data["camions"] as Camion[];
+
+        const updatedCamions = camions.filter(
+          (camion) => camion.matricule !== matricule,
+        );
+
+        await updateDoc(docRef, {
+          camions: updatedCamions,
+        });
+        setCamions(camions.filter((camion) => camion.matricule !== matricule));
+
         toast.success("Camion supprimé avec succès");
-      })
-      .catch(_ => {
-        toast.error("Erreur lors de la suppression du camion");
-      });
+      }
+    } catch {
+      toast.error("Erreur lors de la suppression du camion");
+    }
   };
 
   useEffect(() => {
@@ -71,7 +96,12 @@ export const PageCamions = () => {
                     <PiTruckThin size={45} className="m-1" />
                     <Card.Title>Matricule : {camion.matricule}</Card.Title>
                     <Card.Subtitle className="mb-2 text-muted">
-                      Info : {camion.marque + " " + camion.modele + " - " + camion.annee}
+                      Info :{" "}
+                      {camion.marque +
+                        " " +
+                        camion.modele +
+                        " - " +
+                        camion.annee}
                     </Card.Subtitle>
                     <Card.Text>
                       <div>Poids : {camion.poids + " Kg"}</div>
@@ -80,7 +110,7 @@ export const PageCamions = () => {
                         className="ms-5 mb-1"
                         size={25}
                         cursor="pointer"
-                        onClick={() => deleteCamion(camion.id)}
+                        onClick={() => deleteCamion(camion.matricule)}
                       />
                     </Card.Text>
                     {/* <Card.Link href="#">Card Link</Card.Link> */}

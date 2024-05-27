@@ -9,10 +9,10 @@ import AuthProvider from "./auth/AuthContext.tsx";
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <Toaster />
-    <AuthProvider>
-      <BrowserRouter>
+    <BrowserRouter>
+      <AuthProvider>
         <App />
-      </BrowserRouter>
-    </AuthProvider>
-  </React.StrictMode>
+      </AuthProvider>
+    </BrowserRouter>
+  </React.StrictMode>,
 );

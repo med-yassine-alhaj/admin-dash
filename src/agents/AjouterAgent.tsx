@@ -1,16 +1,21 @@
 import toast from "react-hot-toast";
-import React from "react";
+import React, { useContext } from "react";
 import { Button, Form } from "react-bootstrap";
 import { Agent, AgentDocument } from "./types";
 import { databaseClient } from "../firebaseConfig";
-import { addDoc, collection } from "firebase/firestore";
+import { arrayUnion, doc, updateDoc } from "firebase/firestore";
+import { AuthContext } from "../auth/AuthContext";
 
 type AjouterAgentProps = {
   ajouterAgent: (agent: AgentDocument) => void;
   hide: () => void;
 };
 
-export const AjouterAgent: React.FC<AjouterAgentProps> = ({ ajouterAgent, hide }) => {
+export const AjouterAgent: React.FC<AjouterAgentProps> = ({
+  ajouterAgent,
+  hide,
+}) => {
+  const authContext = useContext(AuthContext)!;
   const [agent, setAgent] = React.useState<Agent>({
     nom: "",
     prenom: "",
@@ -28,19 +33,26 @@ export const AjouterAgent: React.FC<AjouterAgentProps> = ({ ajouterAgent, hide }
   };
 
   const AjouterAgent = async () => {
-    const result = await addDoc(collection(databaseClient, "agents"), {
-      ...agent,
-    });
+    const user = authContext.userId;
 
-    if (result) {
-      ajouterAgent({
-        ...agent,
-        id: result.id,
+    if (!user) {
+      toast.error("Erreur lors de l'ajout du camion");
+      return;
+    }
+
+    await updateDoc(doc(databaseClient, "users", user), {
+      agents: arrayUnion(agent),
+    })
+      .then(() => {
+        ajouterAgent({
+          ...agent,
+        });
+        toast.success("Camion ajouté avec succès");
+        hide();
+      })
+      .catch(() => {
+        toast.error("Erreur lors de l'ajout du camion");
       });
-      hide();
-
-      toast.success("Agent ajouté avec succès");
-    } else toast.error("Erreur lors de l'ajout du Agent");
   };
 
   return (

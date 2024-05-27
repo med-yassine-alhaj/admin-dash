@@ -1,16 +1,21 @@
 import toast from "react-hot-toast";
-import React from "react";
+import React, { useContext } from "react";
 import { Button, Form } from "react-bootstrap";
 import { Camion, CamionDocument } from "./type";
 import { databaseClient } from "../firebaseConfig";
-import { addDoc, collection } from "firebase/firestore";
+import { arrayUnion, doc, updateDoc } from "firebase/firestore";
+import { AuthContext } from "../auth/AuthContext";
 
 type AjouterCamionProps = {
   ajouterCamion: (camion: CamionDocument) => void;
   hide: () => void;
 };
 
-export const AjouterCamion: React.FC<AjouterCamionProps> = ({ ajouterCamion, hide }) => {
+export const AjouterCamion: React.FC<AjouterCamionProps> = ({
+  ajouterCamion,
+  hide,
+}) => {
+  const authContext = useContext(AuthContext)!;
   const [camion, setCamion] = React.useState<Camion>({
     matricule: "",
     marque: "",
@@ -28,18 +33,26 @@ export const AjouterCamion: React.FC<AjouterCamionProps> = ({ ajouterCamion, hid
   };
 
   const AjouterCamion = async () => {
-    const result = await addDoc(collection(databaseClient, "camions"), {
-      ...camion,
-    });
+    const user = authContext.userId;
 
-    if (result) {
-      ajouterCamion({
-        ...camion,
-        id: result.id,
+    if (!user) {
+      toast.error("Erreur lors de l'ajout du camion");
+      return;
+    }
+
+    await updateDoc(doc(databaseClient, "users", user), {
+      camions: arrayUnion(camion),
+    })
+      .then(() => {
+        ajouterCamion({
+          ...camion,
+        });
+        toast.success("Camion ajouté avec succès");
+        hide();
+      })
+      .catch(() => {
+        toast.error("Erreur lors de l'ajout du camion");
       });
-      toast.success("Camion ajouté avec succès");
-      hide();
-    } else toast.error("Erreur lors de l'ajout du camion");
   };
 
   return (

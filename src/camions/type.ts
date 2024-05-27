@@ -7,4 +7,4 @@ export type Camion = {
   chargeUtile: number;
 };
 
-export type CamionDocument = Camion & { id: string };
+export type CamionDocument = Camion 

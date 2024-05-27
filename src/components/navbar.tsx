@@ -1,36 +1,89 @@
+import { useContext } from "react";
+import { useNavigate } from "react-router-dom";
 import Nav from "react-bootstrap/Nav";
 import Navbar from "react-bootstrap/Navbar";
-import { useNavigate } from "react-router-dom";
 import Container from "react-bootstrap/Container";
-import { useContext } from "react";
+import NavDropdown from "react-bootstrap/NavDropdown";
 import { AuthContext } from "../auth/AuthContext";
-import { FaTruckMoving } from "react-icons/fa";
+import {
+  FaUsers,
+  FaUserPlus,
+  FaTruck,
+  FaUserTie,
+  FaMapMarkerAlt,
+  FaSignOutAlt,
+  FaHome,
+} from "react-icons/fa";
+import "./DashboardNavbar.css";
 
 function DashboardNavbar() {
   const navigate = useNavigate();
   const authContext = useContext(AuthContext)!;
 
   return (
-    <Navbar collapseOnSelect expand="md" className="bg-body-tertiary border border-1 border-body-secondary">
-      <Container>
-        <Navbar.Brand onClick={() => navigate("/")}>
-          <FaTruckMoving size={30} />
-        </Navbar.Brand>
-        <Navbar.Toggle aria-controls="responsive-navbar-nav" />
+    <Navbar collapseOnSelect expand="md" className="custom-navbar">
+      <Container
+        style={{
+          minHeight: "50px",
+        }}
+      >
+        {authContext.role !== "_" && (
+          <Navbar.Brand
+            style={{
+              cursor: "pointer",
+              marginRight: "100px",
+            }}
+          >
+            <FaHome size={30} />
+          </Navbar.Brand>
+        )}
+
+        {authContext.role !== "_" && (
+          <Navbar.Toggle aria-controls="responsive-navbar-nav" />
+        )}
+
         <Navbar.Collapse id="responsive-navbar-nav">
           <Nav className="me-auto">
-            <Nav.Link onClick={() => navigate("/camions")}>Camions</Nav.Link>
-            <Nav.Link onClick={() => navigate("/agents")}>Agents</Nav.Link>
-            <Nav.Link onClick={() => navigate("/pdc")}>Points De Collect</Nav.Link>
+            {authContext.role === "admin" && (
+              <NavDropdown title="Users" id="admin-nav-dropdown">
+                <NavDropdown.Item onClick={() => navigate("/users")}>
+                  <FaUsers className="me-2" />
+                  Users
+                </NavDropdown.Item>
+                <NavDropdown.Item onClick={() => navigate("/users/add")}>
+                  <FaUserPlus className="me-2" />
+                  Add User
+                </NavDropdown.Item>
+              </NavDropdown>
+            )}
+            {authContext.role === "user" && (
+              <>
+                <Nav.Link onClick={() => navigate("/camions")}>
+                  <FaTruck className="me-2" />
+                  Camions
+                </Nav.Link>
+                <Nav.Link onClick={() => navigate("/agents")}>
+                  <FaUserTie className="me-2" />
+                  Agents
+                </Nav.Link>
+                <Nav.Link onClick={() => navigate("/pdc")}>
+                  <FaMapMarkerAlt className="me-2" />
+                  Points De Collect
+                </Nav.Link>
+              </>
+            )}
           </Nav>
           <Nav>
-            <Nav.Link
-              onClick={() => {
-                authContext.logOut();
-              }}
-            >
-              Déconnecter
-            </Nav.Link>
+            {authContext.role !== "_" && (
+              <Nav.Link
+                onClick={() => {
+                  authContext.logOut();
+                }}
+              >
+                <FaSignOutAlt className="me-2" />
+                Déconnecter
+              </Nav.Link>
+            )}
           </Nav>
         </Navbar.Collapse>
       </Container>

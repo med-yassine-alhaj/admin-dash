@@ -7,4 +7,4 @@ export type Agent = {
   motDePasse: string;
 };
 
-export type AgentDocument = Agent & { id: string };
+export type AgentDocument = Agent 

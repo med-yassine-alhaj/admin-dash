@@ -5,55 +5,69 @@ import DashboardNavbar from "./components/navbar";
 import { PageCamions } from "./camions/PageCamions";
 import { PagePointDeCollect } from "./PointDeCollect/PagePointsDeCollect";
 
-import "leaflet/dist/leaflet.css";
 import "./app.css";
-import { AuthGuard } from "./auth/AuthGuard";
+import { RoleGuard } from "./auth/AuthGuard";
+import { AddUser } from "./manageUsers/AddUser";
+import { UsersPage } from "./manageUsers/UsersPage";
 
 function App() {
   return (
     <div
       style={{
         backgroundColor: "#f8f9fa",
-        minHeight: "100vh",
         margin: 0,
         marginBottom: "100px",
       }}
     >
-      <AuthGuard>
-        <DashboardNavbar />
-      </AuthGuard>
+      <DashboardNavbar />
 
       <Routes>
         <Route
           path="/"
           element={
-            <AuthGuard>
+            <RoleGuard role="user">
               <PageCamions />
-            </AuthGuard>
+            </RoleGuard>
           }
         />
         <Route
           path="/camions"
           element={
-            <AuthGuard>
+            <RoleGuard role="user">
               <PageCamions />
-            </AuthGuard>
+            </RoleGuard>
           }
         />
         <Route
           path="/agents"
           element={
-            <AuthGuard>
+            <RoleGuard role="user">
               <PageAgents />
-            </AuthGuard>
+            </RoleGuard>
           }
         />
         <Route
           path="/pdc"
           element={
-            <AuthGuard>
+            <RoleGuard role="user">
               <PagePointDeCollect />
-            </AuthGuard>
+            </RoleGuard>
+          }
+        />
+        <Route
+          path="/users"
+          element={
+            <RoleGuard role="admin">
+              <UsersPage />
+            </RoleGuard>
+          }
+        />
+        <Route
+          path="/users/add"
+          element={
+            <RoleGuard role="admin">
+              <AddUser />
+            </RoleGuard>
           }
         />
         <Route path="/login" element={<LoginPage />} />

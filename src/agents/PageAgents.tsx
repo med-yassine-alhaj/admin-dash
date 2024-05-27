@@ -1,44 +1,64 @@
 import toast from "react-hot-toast";
 import { CiUser } from "react-icons/ci";
-import { AgentDocument } from "./types";
+import { Agent, AgentDocument } from "./types";
 import { MdDelete } from "react-icons/md";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { AjouterAgent } from "./AjouterAgent";
 import { databaseClient } from "../firebaseConfig";
 import { Button, Card, Col, Container, Modal, Row } from "react-bootstrap";
-import { collection, deleteDoc, doc, getDocs, query } from "firebase/firestore";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { AuthContext } from "../auth/AuthContext";
 
 export const PageAgents = () => {
   const [show, setShow] = useState(false);
   const handleClose = () => setShow(false);
   const handleShow = () => setShow(true);
+  const authContext = useContext(AuthContext)!;
 
   const [agents, setAgents] = useState<AgentDocument[]>([]);
 
   const getAgents = async () => {
-    const agentsQuery = query(collection(databaseClient, "agents"));
+    try {
+      const docRef = doc(databaseClient, "users", authContext.userId || "");
 
-    const querySnapshot = await getDocs(agentsQuery);
+      const docSnap = await getDoc(docRef);
 
-    const document = querySnapshot.docs.map(doc => {
-      return {
-        id: doc.id,
-        ...doc.data(),
-      };
-    }) as AgentDocument[];
+      if (docSnap.exists()) {
+        const data = docSnap.data();
 
-    setAgents(document);
+        const agentsData = data["agents"] as Agent[];
+
+        setAgents(agentsData);
+      }
+    } catch (e) {
+      toast.error("Erreur lors de la récupération des agents");
+    }
   };
 
-  const deleteAgent = (id: string) => {
-    deleteDoc(doc(databaseClient, "agents", id))
-      .then(() => {
-        setAgents(agents.filter(agent => agent.id !== id));
-        toast.success("Agent supprimé avec succès");
-      })
-      .catch(_ => {
-        toast.error("Erreur lors de la suppression d'agent");
-      });
+  const deleteAgent = async (email: string) => {
+    try {
+      const docRef = doc(databaseClient, "users", authContext.userId || "");
+
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+
+        const agents = data["agents"] as Agent[];
+
+        const updatedAgents = agents.filter((agent) => agent.email !== email);
+
+        await updateDoc(docRef, {
+          agents: updatedAgents,
+        });
+
+        setAgents(agents.filter((agent) => agent.email !== email));
+
+        toast.success("agent supprimé avec succès");
+      }
+    } catch(e) {
+      toast.error("Erreur lors de la suppression du agent");
+    }
   };
 
   useEffect(() => {
@@ -53,7 +73,10 @@ export const PageAgents = () => {
             <Modal.Title>Ajouter Agent</Modal.Title>
           </Modal.Header>
           <Modal.Body>
-            <AjouterAgent hide={handleClose} ajouterAgent={agent => setAgents([...agents, agent])} />
+            <AjouterAgent
+              hide={handleClose}
+              ajouterAgent={(agent) => setAgents([...agents, agent])}
+            />
           </Modal.Body>
         </Modal>
 
@@ -67,7 +90,9 @@ export const PageAgents = () => {
                     <CiUser size={35} className="m-1" />
 
                     <Card.Title>nom: {agent.nom}</Card.Title>
-                    <Card.Subtitle className="mb-2 text-muted">prenom: {agent.prenom}</Card.Subtitle>
+                    <Card.Subtitle className="mb-2 text-muted">
+                      prenom: {agent.prenom}
+                    </Card.Subtitle>
                     <Card.Text>
                       <div>Email: {agent.email}</div>
                       <div>Mot de passe: {agent.motDePasse}</div>
@@ -76,7 +101,7 @@ export const PageAgents = () => {
                         className="ms-5 mb-1"
                         size={25}
                         cursor="pointer"
-                        onClick={() => deleteAgent(agent.id)}
+                        onClick={() => deleteAgent(agent.email)}
                         color="red"
                       />
                     </Card.Text>

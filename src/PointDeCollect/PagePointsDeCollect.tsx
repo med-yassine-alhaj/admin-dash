@@ -1,15 +1,12 @@
 import { PointDeCollect } from "./types";
-import { useEffect, useId, useState } from "react";
+import { useContext, useEffect, useId, useState } from "react";
 import { databaseClient } from "../firebaseConfig";
 import { Button, Form } from "react-bootstrap";
-import {
-  addDoc,
-  collection,
-  deleteDoc,
-  doc,
-  getDocs,
-  query,
-} from "firebase/firestore";
+import { arrayUnion, doc, getDoc, updateDoc } from "firebase/firestore";
+import toast from "react-hot-toast";
+import { IoMdRemoveCircleOutline } from "react-icons/io";
+import { AuthContext } from "../auth/AuthContext";
+
 import {
   APIProvider,
   AdvancedMarker,
@@ -18,10 +15,6 @@ import {
   Pin,
   useAdvancedMarkerRef,
 } from "@vis.gl/react-google-maps";
-import toast from "react-hot-toast";
-import { IoMdRemoveCircleOutline } from "react-icons/io";
-
-type PointDeCollectDocument = PointDeCollect & { id: string };
 
 export const PagePointDeCollect = () => {
   return (
@@ -48,46 +41,64 @@ export const PagePointDeCollect = () => {
 };
 
 const GoogleMapVisgl = () => {
+  const [defaultCenter, setDefaultCenter] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
   const [newCollectionPoint, setNewCollectionPoint] =
     useState<PointDeCollect | null>(null);
 
   const [pointsDeCollect, setPointsDeCollect] = useState<PointDeCollect[]>([]);
 
+  const authContext = useContext(AuthContext)!;
+
   const ajouterPointDeCollect = (pointDeCollect: PointDeCollect) => {
     setPointsDeCollect([...pointsDeCollect, pointDeCollect]);
   };
 
-  const removeCollectionPoint = (id: string) => {
-    setPointsDeCollect(pointsDeCollect.filter((p) => p.id !== id));
+  const removeCollectionPoint = (name: string) => {
+    setPointsDeCollect(pointsDeCollect.filter((p) => p.nom !== name));
   };
 
   const getPointsDeCollect = async () => {
-    const pointDeCollectQuery = query(
-      collection(databaseClient, "pointsDeCollect"),
-    );
+    try {
+      const docRef = doc(databaseClient, "users", authContext.userId || "");
 
-    const querySnapshot = await getDocs(pointDeCollectQuery);
+      const docSnap = await getDoc(docRef);
 
-    const document = querySnapshot.docs.map((doc) => {
-      return {
-        id: doc.id,
-        ...doc.data(),
-      };
-    }) as PointDeCollectDocument[];
+      if (docSnap.exists()) {
+        const data = docSnap.data();
 
-    setPointsDeCollect(document);
+        const collectionPoints = data["pointsDeCollect"] as PointDeCollect[];
+
+        const placeCoords = data["ville"] as {
+          lat: number;
+          lng: number;
+          nom: string;
+        };
+
+        setDefaultCenter({
+          lat: placeCoords.lat,
+          lng: placeCoords.lng,
+        });
+
+        setPointsDeCollect(collectionPoints);
+      }
+    } catch (e) {
+      toast.error("Erreur lors de la récupération des points de collecte");
+    }
   };
 
   useEffect(() => {
     getPointsDeCollect();
   }, []);
 
-  return (
+  return defaultCenter ? (
     <APIProvider apiKey={"AIzaSyDXdXXNJTBEKGgZWNm-bYhrUDz6_3gysTY"}>
       <Map
         style={{ width: "100%", height: "80vh" }}
-        defaultCenter={{ lat: 36.8, lng: 10.18 }}
-        defaultZoom={13}
+        defaultCenter={defaultCenter}
+        defaultZoom={16}
         gestureHandling={"greedy"}
         disableDefaultUI={true}
         mapId={"someId"}
@@ -95,7 +106,6 @@ const GoogleMapVisgl = () => {
         onClick={(e) => {
           if (e.detail.latLng)
             setNewCollectionPoint({
-              id: "",
               lat: e.detail.latLng?.lat,
               lng: e.detail.latLng?.lng,
             });
@@ -118,6 +128,8 @@ const GoogleMapVisgl = () => {
         )}
       </Map>
     </APIProvider>
+  ) : (
+    ""
   );
 };
 
@@ -132,16 +144,34 @@ const MarkerVisglWrapper: React.FC<MarkerVisglWrapperProps> = ({
 }) => {
   const [infowindowOpen, setInfowindowOpen] = useState(false);
   const [markerRef, marker] = useAdvancedMarkerRef();
+  const authContext = useContext(AuthContext)!;
 
-  const removeCollectionPoint = () => {
-    deleteDoc(doc(databaseClient, "pointsDeCollect", pointDeCollect.id))
-      .then(() => {
-        toast.success("point de collect supprimé avec succès");
-        deleteCollectionPoint(pointDeCollect.id);
-      })
-      .catch(() =>
-        toast.error("Erreur lors de la suppression du point de collect"),
-      );
+  const removeCollectionPoint = async (name: string) => {
+    try {
+      const docRef = doc(databaseClient, "users", authContext.userId || "");
+
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+
+        const collectionPoints = data["pointsDeCollect"] as PointDeCollect[];
+
+        const updatedCollectionPoints = collectionPoints.filter(
+          (collectionPoint) => collectionPoint.nom !== name,
+        );
+
+        await updateDoc(docRef, {
+          pointsDeCollect: updatedCollectionPoints,
+        });
+
+        deleteCollectionPoint(pointDeCollect.nom || "");
+
+        toast.success("Camion supprimé avec succès");
+      }
+    } catch {
+      toast.error("Erreur lors de la suppression du camion");
+    }
   };
 
   return (
@@ -169,7 +199,7 @@ const MarkerVisglWrapper: React.FC<MarkerVisglWrapperProps> = ({
             Nom: {pointDeCollect.nom}
           </span>
           <IoMdRemoveCircleOutline
-            onClick={() => removeCollectionPoint()}
+            onClick={() => removeCollectionPoint(pointDeCollect.nom || "")}
             color="red"
             size={30}
             cursor="pointer"
@@ -197,26 +227,38 @@ const NewCollectionPointMarker: React.FC<NewCollectionPointMarkerProps> = ({
   const [infowindowOpen, setInfowindowOpen] = useState(false);
   const [markerRef, marker] = useAdvancedMarkerRef();
   const [name, setName] = useState<string>("");
+  const authContext = useContext(AuthContext)!;
 
   const addNewCollectionPoint = async () => {
-    const result = await addDoc(collection(databaseClient, "pointsDeCollect"), {
-      lat: pointDeCollect.lat,
-      lng: pointDeCollect.lng,
-      nom: name,
-    });
+    const user = authContext.userId;
 
-    toast.success("Point de collect ajouté avec succès");
+    if (!user) {
+      toast.error("Erreur lors de l'ajout du camion");
+      return;
+    }
 
-    addCollectionPoint({
-      id: result.id,
-      lat: pointDeCollect.lat,
-      lng: pointDeCollect.lng,
-      nom: name,
-    });
+    await updateDoc(doc(databaseClient, "users", user), {
+      pointsDeCollect: arrayUnion({
+        lat: pointDeCollect.lat,
+        lng: pointDeCollect.lng,
+        nom: name,
+      }),
+    })
+      .then(() => {
+        addCollectionPoint({
+          lat: pointDeCollect.lat,
+          lng: pointDeCollect.lng,
+          nom: name,
+        });
 
-    setName("");
+        setName("");
 
-    setInfowindowOpen(false);
+        setInfowindowOpen(false);
+        toast.success("Camion ajouté avec succès");
+      })
+      .catch(() => {
+        toast.error("Erreur lors de l'ajout du camion");
+      });
   };
 
   useEffect(() => {
@@ -239,6 +281,9 @@ const NewCollectionPointMarker: React.FC<NewCollectionPointMarkerProps> = ({
             onChange={(e) => setName(e.target.value)}
             type="text"
             placeholder="Nom du point de collect"
+            id="name"
+            name="name"
+            autoComplete="off"
           />
           <Button
             variant="primary"
