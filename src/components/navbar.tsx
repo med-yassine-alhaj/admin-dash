@@ -1,10 +1,12 @@
+import "./DashboardNavbar.css";
 import { useContext } from "react";
-import { useNavigate } from "react-router-dom";
 import Nav from "react-bootstrap/Nav";
 import Navbar from "react-bootstrap/Navbar";
+import { useNavigate } from "react-router-dom";
 import Container from "react-bootstrap/Container";
-import NavDropdown from "react-bootstrap/NavDropdown";
 import { AuthContext } from "../auth/AuthContext";
+import NavDropdown from "react-bootstrap/NavDropdown";
+
 import {
   FaUsers,
   FaUserPlus,
@@ -14,7 +16,8 @@ import {
   FaSignOutAlt,
   FaHome,
 } from "react-icons/fa";
-import "./DashboardNavbar.css";
+
+import { HiOutlineLocationMarker } from "react-icons/hi";
 
 function DashboardNavbar() {
   const navigate = useNavigate();
@@ -58,17 +61,31 @@ function DashboardNavbar() {
             )}
             {authContext.role === "user" && (
               <>
-                <Nav.Link onClick={() => navigate("/camions")}>
+                <Nav.Link className="me-3" onClick={() => navigate("/camions")}>
                   <FaTruck className="me-2" />
                   Camions
                 </Nav.Link>
-                <Nav.Link onClick={() => navigate("/agents")}>
+                <Nav.Link className="me-3" onClick={() => navigate("/agents")}>
                   <FaUserTie className="me-2" />
                   Agents
                 </Nav.Link>
-                <Nav.Link onClick={() => navigate("/pdc")}>
+                <Nav.Link className="me-3" onClick={() => navigate("/pdc")}>
                   <FaMapMarkerAlt className="me-2" />
                   Points De Collect
+                </Nav.Link>
+                <Nav.Link
+                  className="me-3"
+                  onClick={() => navigate("/tournees")}
+                >
+                  <FaMapMarkerAlt className="me-2" />
+                  Tournées
+                </Nav.Link>
+                <Nav.Link
+                  className="me-3"
+                  onClick={() => navigate("/tracking")}
+                >
+                  <HiOutlineLocationMarker className="me-2" />
+                  Tracking
                 </Nav.Link>
               </>
             )}

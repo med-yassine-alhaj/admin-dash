@@ -7,14 +7,7 @@ import toast from "react-hot-toast";
 import { IoMdRemoveCircleOutline } from "react-icons/io";
 import { AuthContext } from "../auth/AuthContext";
 
-import {
-  APIProvider,
-  AdvancedMarker,
-  InfoWindow,
-  Map,
-  Pin,
-  useAdvancedMarkerRef,
-} from "@vis.gl/react-google-maps";
+import { APIProvider, AdvancedMarker, InfoWindow, Map, Pin, useAdvancedMarkerRef } from "@vis.gl/react-google-maps";
 
 export const PagePointDeCollect = () => {
   return (
@@ -32,7 +25,7 @@ export const PagePointDeCollect = () => {
             marginBottom: "20px",
           }}
         >
-          La Liste Des Points De Collect
+          <h3 className="mt-3 text-center">La Liste Des Points De Collect</h3>
         </div>
         <GoogleMapVisgl />
       </div>
@@ -45,8 +38,7 @@ const GoogleMapVisgl = () => {
     lat: number;
     lng: number;
   } | null>(null);
-  const [newCollectionPoint, setNewCollectionPoint] =
-    useState<PointDeCollect | null>(null);
+  const [newCollectionPoint, setNewCollectionPoint] = useState<PointDeCollect | null>(null);
 
   const [pointsDeCollect, setPointsDeCollect] = useState<PointDeCollect[]>([]);
 
@@ -57,7 +49,7 @@ const GoogleMapVisgl = () => {
   };
 
   const removeCollectionPoint = (name: string) => {
-    setPointsDeCollect(pointsDeCollect.filter((p) => p.nom !== name));
+    setPointsDeCollect(pointsDeCollect.filter(p => p.nom !== name));
   };
 
   const getPointsDeCollect = async () => {
@@ -103,7 +95,7 @@ const GoogleMapVisgl = () => {
         disableDefaultUI={true}
         mapId={"someId"}
         mapTypeId="hybrid"
-        onClick={(e) => {
+        onClick={e => {
           if (e.detail.latLng)
             setNewCollectionPoint({
               lat: e.detail.latLng?.lat,
@@ -111,20 +103,12 @@ const GoogleMapVisgl = () => {
             });
         }}
       >
-        {pointsDeCollect.map((pointDeCollect) => {
-          return (
-            <MarkerVisglWrapper
-              deleteCollectionPoint={removeCollectionPoint}
-              pointDeCollect={pointDeCollect}
-            />
-          );
+        {pointsDeCollect.map(pointDeCollect => {
+          return <MarkerVisglWrapper deleteCollectionPoint={removeCollectionPoint} pointDeCollect={pointDeCollect} />;
         })}
 
         {newCollectionPoint && (
-          <NewCollectionPointMarker
-            pointDeCollect={newCollectionPoint}
-            addCollectionPoint={ajouterPointDeCollect}
-          />
+          <NewCollectionPointMarker pointDeCollect={newCollectionPoint} addCollectionPoint={ajouterPointDeCollect} />
         )}
       </Map>
     </APIProvider>
@@ -138,10 +122,7 @@ type MarkerVisglWrapperProps = {
   deleteCollectionPoint: (id: string) => void;
 };
 
-const MarkerVisglWrapper: React.FC<MarkerVisglWrapperProps> = ({
-  pointDeCollect,
-  deleteCollectionPoint,
-}) => {
+const MarkerVisglWrapper: React.FC<MarkerVisglWrapperProps> = ({ pointDeCollect, deleteCollectionPoint }) => {
   const [infowindowOpen, setInfowindowOpen] = useState(false);
   const [markerRef, marker] = useAdvancedMarkerRef();
   const authContext = useContext(AuthContext)!;
@@ -157,9 +138,7 @@ const MarkerVisglWrapper: React.FC<MarkerVisglWrapperProps> = ({
 
         const collectionPoints = data["pointsDeCollect"] as PointDeCollect[];
 
-        const updatedCollectionPoints = collectionPoints.filter(
-          (collectionPoint) => collectionPoint.nom !== name,
-        );
+        const updatedCollectionPoints = collectionPoints.filter(collectionPoint => collectionPoint.nom !== name);
 
         await updateDoc(docRef, {
           pointsDeCollect: updatedCollectionPoints,
@@ -183,11 +162,7 @@ const MarkerVisglWrapper: React.FC<MarkerVisglWrapperProps> = ({
       onClick={() => setInfowindowOpen(true)}
     >
       {infowindowOpen && (
-        <InfoWindow
-          anchor={marker}
-          maxWidth={200}
-          onCloseClick={() => setInfowindowOpen(false)}
-        >
+        <InfoWindow anchor={marker} maxWidth={200} onCloseClick={() => setInfowindowOpen(false)}>
           <span
             style={{
               marginRight: "10px",
@@ -206,11 +181,7 @@ const MarkerVisglWrapper: React.FC<MarkerVisglWrapperProps> = ({
           />
         </InfoWindow>
       )}
-      <Pin
-        background={"#0f9d58"}
-        borderColor={"#006425"}
-        glyphColor={"#60d98f"}
-      />
+      <Pin background={"#0f9d58"} borderColor={"#006425"} glyphColor={"#60d98f"} />
     </AdvancedMarker>
   );
 };
@@ -220,10 +191,7 @@ type NewCollectionPointMarkerProps = {
   addCollectionPoint: (collectionPoint: PointDeCollect) => void;
 };
 
-const NewCollectionPointMarker: React.FC<NewCollectionPointMarkerProps> = ({
-  pointDeCollect,
-  addCollectionPoint,
-}) => {
+const NewCollectionPointMarker: React.FC<NewCollectionPointMarkerProps> = ({ pointDeCollect, addCollectionPoint }) => {
   const [infowindowOpen, setInfowindowOpen] = useState(false);
   const [markerRef, marker] = useAdvancedMarkerRef();
   const [name, setName] = useState<string>("");
@@ -278,7 +246,7 @@ const NewCollectionPointMarker: React.FC<NewCollectionPointMarkerProps> = ({
         <InfoWindow anchor={marker} minWidth={400}>
           <Form.Control
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={e => setName(e.target.value)}
             type="text"
             placeholder="Nom du point de collect"
             id="name"
@@ -297,11 +265,7 @@ const NewCollectionPointMarker: React.FC<NewCollectionPointMarkerProps> = ({
           </Button>
         </InfoWindow>
       )}
-      <Pin
-        background={"#ff0000"}
-        borderColor={"#ff4433"}
-        glyphColor={"#E34234"}
-      />
+      <Pin background={"#ff0000"} borderColor={"#ff4433"} glyphColor={"#E34234"} />
     </AdvancedMarker>
   );
 };

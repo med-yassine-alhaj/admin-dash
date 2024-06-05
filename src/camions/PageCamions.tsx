@@ -1,13 +1,13 @@
-import { Camion, CamionDocument } from "./type";
 import toast from "react-hot-toast";
 import { MdDelete } from "react-icons/md";
-import { useContext, useEffect, useState } from "react";
 import { PiTruckThin } from "react-icons/pi";
+import { Camion, CamionDocument } from "./type";
 import { AjouterCamion } from "./AjouterCamion";
-import { databaseClient } from "../firebaseConfig";
-import { Button, Card, Col, Container, Modal, Row } from "react-bootstrap";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { AuthContext } from "../auth/AuthContext";
+import { databaseClient } from "../firebaseConfig";
+import { useContext, useEffect, useState } from "react";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { Button, Card, Col, Container, Modal, Row } from "react-bootstrap";
 
 export const PageCamions = () => {
   const [show, setShow] = useState(false);
@@ -54,14 +54,12 @@ export const PageCamions = () => {
 
         const camions = data["camions"] as Camion[];
 
-        const updatedCamions = camions.filter(
-          (camion) => camion.matricule !== matricule,
-        );
+        const updatedCamions = camions.filter(camion => camion.matricule !== matricule);
 
         await updateDoc(docRef, {
           camions: updatedCamions,
         });
-        setCamions(camions.filter((camion) => camion.matricule !== matricule));
+        setCamions(camions.filter(camion => camion.matricule !== matricule));
 
         toast.success("Camion supprimé avec succès");
       }
@@ -86,7 +84,7 @@ export const PageCamions = () => {
           </Modal.Body>
         </Modal>
 
-        <h3 className="mt-3">Liste des camions</h3>
+        <h3 className="mt-3 text-center">Liste des camions</h3>
         <Row className="mt-3" xs={2} md={8} lg={8}>
           {camions.map((camion, index) => {
             return (
@@ -96,12 +94,7 @@ export const PageCamions = () => {
                     <PiTruckThin size={45} className="m-1" />
                     <Card.Title>Matricule : {camion.matricule}</Card.Title>
                     <Card.Subtitle className="mb-2 text-muted">
-                      Info :{" "}
-                      {camion.marque +
-                        " " +
-                        camion.modele +
-                        " - " +
-                        camion.annee}
+                      Info : {camion.marque + " " + camion.modele + " - " + camion.annee}
                     </Card.Subtitle>
                     <Card.Text>
                       <div>Poids : {camion.poids + " Kg"}</div>

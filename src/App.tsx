@@ -9,6 +9,9 @@ import "./app.css";
 import { RoleGuard } from "./auth/AuthGuard";
 import { AddUser } from "./manageUsers/AddUser";
 import { UsersPage } from "./manageUsers/UsersPage";
+import { Tournee } from "./tournee/Tournee";
+import { ListTournees } from "./tournee/ListTournees";
+import { PageTracking } from "./tracking/Tracking";
 
 function App() {
   return (
@@ -67,6 +70,30 @@ function App() {
           element={
             <RoleGuard role="admin">
               <AddUser />
+            </RoleGuard>
+          }
+        />
+        <Route
+          path="/tournees"
+          element={
+            <RoleGuard role="user">
+              <ListTournees />
+            </RoleGuard>
+          }
+        />
+        <Route
+          path="/tournees/ajouter"
+          element={
+            <RoleGuard role="user">
+              <Tournee />
+            </RoleGuard>
+          }
+        />
+        <Route
+          path="/tracking"
+          element={
+            <RoleGuard role="user">
+              <PageTracking />
             </RoleGuard>
           }
         />

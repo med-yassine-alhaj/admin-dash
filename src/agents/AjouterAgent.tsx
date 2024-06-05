@@ -2,19 +2,17 @@ import toast from "react-hot-toast";
 import React, { useContext } from "react";
 import { Button, Form } from "react-bootstrap";
 import { Agent, AgentDocument } from "./types";
-import { databaseClient } from "../firebaseConfig";
-import { arrayUnion, doc, updateDoc } from "firebase/firestore";
 import { AuthContext } from "../auth/AuthContext";
+import { authClient, databaseClient } from "../firebaseConfig";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { addDoc, arrayUnion, collection, doc, updateDoc } from "firebase/firestore";
 
 type AjouterAgentProps = {
   ajouterAgent: (agent: AgentDocument) => void;
   hide: () => void;
 };
 
-export const AjouterAgent: React.FC<AjouterAgentProps> = ({
-  ajouterAgent,
-  hide,
-}) => {
+export const AjouterAgent: React.FC<AjouterAgentProps> = ({ ajouterAgent, hide }) => {
   const authContext = useContext(AuthContext)!;
   const [agent, setAgent] = React.useState<Agent>({
     nom: "",
@@ -40,8 +38,20 @@ export const AjouterAgent: React.FC<AjouterAgentProps> = ({
       return;
     }
 
+    const data = await createUserWithEmailAndPassword(authClient, agent.email, agent.motDePasse);
+
+    // FIXME : use this to fetch data later
+    await addDoc(collection(databaseClient, "agents"), {
+      id: data.user.uid,
+      ...agent,
+      supervisorId: authContext.userId,
+    });
+
     await updateDoc(doc(databaseClient, "users", user), {
-      agents: arrayUnion(agent),
+      agents: arrayUnion({
+        id: data.user.uid,
+        ...agent,
+      }),
     })
       .then(() => {
         ajouterAgent({

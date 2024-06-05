@@ -37,6 +37,7 @@ export const PageAgents = () => {
 
   const deleteAgent = async (email: string) => {
     try {
+      // delete agent from database
       const docRef = doc(databaseClient, "users", authContext.userId || "");
 
       const docSnap = await getDoc(docRef);
@@ -46,17 +47,18 @@ export const PageAgents = () => {
 
         const agents = data["agents"] as Agent[];
 
-        const updatedAgents = agents.filter((agent) => agent.email !== email);
+        const updatedAgents = agents.filter(agent => agent.email !== email);
 
         await updateDoc(docRef, {
           agents: updatedAgents,
         });
 
-        setAgents(agents.filter((agent) => agent.email !== email));
+        setAgents(agents.filter(agent => agent.email !== email));
 
         toast.success("agent supprimé avec succès");
       }
-    } catch(e) {
+      // delete agent from authentication system
+    } catch (e) {
       toast.error("Erreur lors de la suppression du agent");
     }
   };
@@ -73,14 +75,11 @@ export const PageAgents = () => {
             <Modal.Title>Ajouter Agent</Modal.Title>
           </Modal.Header>
           <Modal.Body>
-            <AjouterAgent
-              hide={handleClose}
-              ajouterAgent={(agent) => setAgents([...agents, agent])}
-            />
+            <AjouterAgent hide={handleClose} ajouterAgent={agent => setAgents([...agents, agent])} />
           </Modal.Body>
         </Modal>
 
-        <h3 className="mt-3">Liste des agents</h3>
+        <h3 className="mt-3 text-center">Liste des agents</h3>
         <Row className="mt-3" xs={2} md={8} lg={8}>
           {agents.map((agent, index) => {
             return (
@@ -90,9 +89,7 @@ export const PageAgents = () => {
                     <CiUser size={35} className="m-1" />
 
                     <Card.Title>nom: {agent.nom}</Card.Title>
-                    <Card.Subtitle className="mb-2 text-muted">
-                      prenom: {agent.prenom}
-                    </Card.Subtitle>
+                    <Card.Subtitle className="mb-2 text-muted">prenom: {agent.prenom}</Card.Subtitle>
                     <Card.Text>
                       <div>Email: {agent.email}</div>
                       <div>Mot de passe: {agent.motDePasse}</div>

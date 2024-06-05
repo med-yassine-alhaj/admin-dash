@@ -1,11 +1,6 @@
 import { useId, useState } from "react";
 import { Button, Form } from "react-bootstrap";
-import {
-  APIProvider,
-  AdvancedMarker,
-  Map,
-  Pin,
-} from "@vis.gl/react-google-maps";
+import { APIProvider, AdvancedMarker, Map, Pin } from "@vis.gl/react-google-maps";
 import { authClient, databaseClient } from "../firebaseConfig";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { addDoc, collection } from "firebase/firestore";
@@ -40,11 +35,7 @@ export const AddUser = () => {
   const handleSubmit = async () => {
     // save user to firebase auth
     try {
-      const data = await createUserWithEmailAndPassword(
-        authClient,
-        input.email,
-        input.password,
-      );
+      const data = await createUserWithEmailAndPassword(authClient, input.email, input.password);
 
       const user: {
         id: string;
@@ -116,10 +107,7 @@ export const AddUser = () => {
           <Form.Control onChange={handleChange} type="text" />
         </Form.Group>
         Selectionner la position du ville sur la carte
-        <GoogleMapVisgl
-          setLatLng={setLatLng}
-          latLng={{ lat: input.lat, lng: input.lng }}
-        />
+        <GoogleMapVisgl setLatLng={setLatLng} latLng={{ lat: input.lat, lng: input.lng }} />
         <Button
           style={{
             marginTop: "20px",
@@ -138,10 +126,7 @@ type GoogleMapVisglProps = {
   latLng: { lat: number; lng: number };
 };
 
-const GoogleMapVisgl: React.FC<GoogleMapVisglProps> = ({
-  setLatLng,
-  latLng,
-}) => {
+const GoogleMapVisgl: React.FC<GoogleMapVisglProps> = ({ setLatLng, latLng }) => {
   return (
     <APIProvider apiKey={"AIzaSyDXdXXNJTBEKGgZWNm-bYhrUDz6_3gysTY"}>
       <Map
@@ -152,9 +137,8 @@ const GoogleMapVisgl: React.FC<GoogleMapVisglProps> = ({
         disableDefaultUI={true}
         mapId={"someId"}
         mapTypeId="hybrid"
-        onClick={(e) => {
-          if (e.detail.latLng)
-            setLatLng(e.detail.latLng.lat, e.detail.latLng.lng);
+        onClick={e => {
+          if (e.detail.latLng) setLatLng(e.detail.latLng.lat, e.detail.latLng.lng);
         }}
       >
         {latLng && <NewCollectionPointMarker pointDeCollect={latLng} />}
@@ -167,20 +151,14 @@ type NewCollectionPointMarkerProps = {
   pointDeCollect: { lat: number; lng: number };
 };
 
-const NewCollectionPointMarker: React.FC<NewCollectionPointMarkerProps> = ({
-  pointDeCollect,
-}) => {
+const NewCollectionPointMarker: React.FC<NewCollectionPointMarkerProps> = ({ pointDeCollect }) => {
   return (
     <AdvancedMarker
       key={useId()}
       position={{ lat: pointDeCollect.lat, lng: pointDeCollect.lng }}
       title={"AdvancedMarker that opens an Infowindow when clicked."}
     >
-      <Pin
-        background={"#ff0000"}
-        borderColor={"#ff4433"}
-        glyphColor={"#E34234"}
-      />
+      <Pin background={"#ff0000"} borderColor={"#ff4433"} glyphColor={"#E34234"} />
     </AdvancedMarker>
   );
 };

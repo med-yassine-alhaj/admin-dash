@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 import { AuthContext } from "./AuthContext";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { databaseClient } from "../firebaseConfig";
-import "./LoginPage.css"; 
+import "./LoginPage.css";
 
 export const LoginPage = () => {
   const [credentials, setCredentials] = useState({ email: "", password: "" });
@@ -17,16 +17,13 @@ export const LoginPage = () => {
     e.preventDefault();
     authContext
       .loginUser(credentials.email, credentials.password)
-      .then(async (user) => {
+      .then(async user => {
         // check user saved role on firestore
         console.log("user id: ", user.user?.uid);
         const usersCollection = collection(databaseClient, "users");
-        const docSnap = query(
-          usersCollection,
-          where("id", "==", user.user?.uid),
-        );
+        const docSnap = query(usersCollection, where("id", "==", user.user?.uid));
 
-        await getDocs(docSnap).then((querySnapshot) => {
+        await getDocs(docSnap).then(querySnapshot => {
           if (querySnapshot.empty) {
             authContext.setRole("admin");
             navigate("/users");
@@ -52,9 +49,7 @@ export const LoginPage = () => {
               <Form.Label>Addresse email</Form.Label>
               <Form.Control
                 name="email"
-                onChange={(e) =>
-                  setCredentials({ ...credentials, email: e.target.value })
-                }
+                onChange={e => setCredentials({ ...credentials, email: e.target.value })}
                 type="email"
                 placeholder="Entrez votre email"
               />
@@ -66,9 +61,7 @@ export const LoginPage = () => {
                 name="password"
                 type="password"
                 placeholder="Mot de passe"
-                onChange={(e) =>
-                  setCredentials({ ...credentials, password: e.target.value })
-                }
+                onChange={e => setCredentials({ ...credentials, password: e.target.value })}
               />
             </Form.Group>
             <Button variant="primary" type="submit" className="login-button">

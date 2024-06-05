@@ -11,10 +11,7 @@ type AjouterCamionProps = {
   hide: () => void;
 };
 
-export const AjouterCamion: React.FC<AjouterCamionProps> = ({
-  ajouterCamion,
-  hide,
-}) => {
+export const AjouterCamion: React.FC<AjouterCamionProps> = ({ ajouterCamion, hide }) => {
   const authContext = useContext(AuthContext)!;
   const [camion, setCamion] = React.useState<Camion>({
     matricule: "",
