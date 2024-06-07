@@ -87,6 +87,21 @@ function DashboardNavbar() {
                   <HiOutlineLocationMarker className="me-2" />
                   Tracking
                 </Nav.Link>
+
+                <Nav.Link
+                  className="me-3"
+                  onClick={() => navigate("/tournees/realisees")}
+                >
+                  <HiOutlineLocationMarker className="me-2" />
+                  Tournées Realisees
+                </Nav.Link>
+                <Nav.Link
+                  className="me-3"
+                  onClick={() => navigate("/incidents")}
+                >
+                  <HiOutlineLocationMarker className="me-2" />
+                  Incidents 
+                </Nav.Link>
               </>
             )}
           </Nav>

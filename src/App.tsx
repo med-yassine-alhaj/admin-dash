@@ -12,6 +12,8 @@ import { UsersPage } from "./manageUsers/UsersPage";
 import { Tournee } from "./tournee/Tournee";
 import { ListTournees } from "./tournee/ListTournees";
 import { PageTracking } from "./tracking/Tracking";
+import { TourneesRealisees } from "./tourneesRealisees/TourneesRealisees";
+import { Incidents } from "./incident/Incidents";
 
 function App() {
   return (
@@ -90,10 +92,27 @@ function App() {
           }
         />
         <Route
+          path="/tournees/realisees"
+          element={
+            <RoleGuard role="user">
+              <TourneesRealisees />
+            </RoleGuard>
+          }
+        />
+        <Route
           path="/tracking"
           element={
             <RoleGuard role="user">
               <PageTracking />
+            </RoleGuard>
+          }
+        />
+
+        <Route
+          path="/incidents"
+          element={
+            <RoleGuard role="user">
+              <Incidents />
             </RoleGuard>
           }
         />
