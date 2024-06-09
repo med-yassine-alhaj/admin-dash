@@ -6,6 +6,7 @@ export type Agent = {
   email: string;
   telephone: string;
   motDePasse: string;
+  role: string;
 };
 
 export type AgentDocument = Agent;

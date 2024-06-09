@@ -17,20 +17,25 @@ export const LoginPage = () => {
     e.preventDefault();
     authContext
       .loginUser(credentials.email, credentials.password)
-      .then(async user => {
+      .then(async (user) => {
         // check user saved role on firestore
-        console.log("user id: ", user.user?.uid);
         const usersCollection = collection(databaseClient, "users");
-        const docSnap = query(usersCollection, where("id", "==", user.user?.uid));
+        const docSnap = query(
+          usersCollection,
+          where("id", "==", user.user?.uid),
+        );
 
-        await getDocs(docSnap).then(querySnapshot => {
-          if (querySnapshot.empty) {
+        await getDocs(docSnap).then((querySnapshot) => {
+          if (querySnapshot.docs[0].data().role === "admin") {
             authContext.setRole("admin");
-            navigate("/users");
-          } else {
-            authContext.setRole("user");
             authContext.setAuthUserId(querySnapshot.docs[0].id);
             navigate("/");
+            return;
+          } else if (querySnapshot.docs[0].data().role === "superviseur") {
+            authContext.setRole("superviseur");
+            authContext.setAuthUserId(querySnapshot.docs[0].id);
+            navigate("/");
+            return;
           }
         });
       })
@@ -49,7 +54,9 @@ export const LoginPage = () => {
               <Form.Label>Addresse email</Form.Label>
               <Form.Control
                 name="email"
-                onChange={e => setCredentials({ ...credentials, email: e.target.value })}
+                onChange={(e) =>
+                  setCredentials({ ...credentials, email: e.target.value })
+                }
                 type="email"
                 placeholder="Entrez votre email"
               />
@@ -61,7 +68,9 @@ export const LoginPage = () => {
                 name="password"
                 type="password"
                 placeholder="Mot de passe"
-                onChange={e => setCredentials({ ...credentials, password: e.target.value })}
+                onChange={(e) =>
+                  setCredentials({ ...credentials, password: e.target.value })
+                }
               />
             </Form.Group>
             <Button variant="primary" type="submit" className="login-button">

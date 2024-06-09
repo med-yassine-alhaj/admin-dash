@@ -1,12 +1,19 @@
-import { APIProvider, AdvancedMarker, InfoWindow, Map, Pin, useAdvancedMarkerRef } from "@vis.gl/react-google-maps";
+import {
+  APIProvider,
+  AdvancedMarker,
+  InfoWindow,
+  Map,
+  Pin,
+  useAdvancedMarkerRef,
+} from "@vis.gl/react-google-maps";
 import { useContext, useEffect, useId, useState } from "react";
 import { databaseClient, realTimeDB } from "../firebaseConfig";
-import { PointDeCollect } from "../PointDeCollect/types";
 import { AuthContext } from "../auth/AuthContext";
 import { doc, getDoc } from "firebase/firestore";
 import { onChildAdded, onValue, ref } from "firebase/database";
 import toast from "react-hot-toast";
 import { FaTruckMoving } from "react-icons/fa";
+import { PointDeCollect } from "../CentreDeDepot/types";
 
 export const PageTracking = () => {
   return (
@@ -24,7 +31,9 @@ export const PageTracking = () => {
             marginBottom: "20px",
           }}
         >
-          <h3 className="mt-3 text-center">La Liste Des Points De Collect</h3>
+          <h3 className="mt-3 text-center">
+            Visualisation de tracking des camions
+          </h3>
         </div>
         <GoogleMapVisgl />
       </div>
@@ -33,12 +42,9 @@ export const PageTracking = () => {
 };
 
 const GoogleMapVisgl = () => {
-  const [defaultCenter, setDefaultCenter] = useState<{
-    lat: number;
-    lng: number;
-  } | null>(null);
-
-  const [pointsDeCollect, setPointsDeCollect] = useState<PointDeCollect[]>([]);
+  const [collectionPoints, setCollectionPoints] = useState<
+    { lat: number; lng: number }[]
+  >([]);
 
   const [trackingPoints, setTrackingPoints] = useState<
     {
@@ -49,9 +55,13 @@ const GoogleMapVisgl = () => {
   >([]);
 
   const addTrackingPoint = (agentId: string, lat: number, lng: number) => {
-    const found = trackingPoints.find(p => p.agentId === agentId);
+    const found = trackingPoints.find((p) => p.agentId === agentId);
     if (found) {
-      setTrackingPoints(trackingPoints.map(p => (p.agentId === agentId ? { agentId, lat, lng } : p)));
+      setTrackingPoints(
+        trackingPoints.map((p) =>
+          p.agentId === agentId ? { agentId, lat, lng } : p,
+        ),
+      );
     } else {
       setTrackingPoints([...trackingPoints, { agentId, lat, lng }]);
     }
@@ -66,29 +76,31 @@ const GoogleMapVisgl = () => {
     // First, load the initial data to set the flag
     onValue(
       trackingCollection,
-      snapshot => {
-        // Do nothing with the initial data
+      () => {
         initialLoadComplete = true;
       },
       {
         onlyOnce: true, // Ensure this is called only once to get the initial data
-      }
+      },
     );
 
     // Then, listen for new additions
-    const unSubscribe = onChildAdded(trackingCollection, snapshot => {
+    const unSubscribe = onChildAdded(trackingCollection, (snapshot) => {
       if (initialLoadComplete) {
         const data = snapshot.val();
-        console.log(data);
+        setTrackingPoints((prev) => [...prev, data]);
 
-        if (data && data.agentId && data.lat && data.lng) addTrackingPoint(data.agentId, data.lat, data.lng);
+        if (data && data.agentId && data.lat && data.lng)
+          addTrackingPoint(data.agentId, data.lat, data.lng);
       }
     });
 
     return () => unSubscribe();
   }, []);
 
-  const getPointsDeCollect = async () => {
+  const [centresDeDepots, setCentresDeDepots] = useState<PointDeCollect[]>([]);
+
+  const getCentresDeDepots = async () => {
     try {
       const docRef = doc(databaseClient, "users", authContext.userId || "");
 
@@ -97,28 +109,50 @@ const GoogleMapVisgl = () => {
       if (docSnap.exists()) {
         const data = docSnap.data();
 
-        const collectionPoints = data["pointsDeCollect"] as PointDeCollect[];
+        const CdT = data["centresDeDepots"] as PointDeCollect[];
 
-        const placeCoords = data["ville"] as {
-          lat: number;
-          lng: number;
-          nom: string;
-        };
-
-        setDefaultCenter({
-          lat: placeCoords.lat,
-          lng: placeCoords.lng,
-        });
-
-        setPointsDeCollect(collectionPoints);
+        if (CdT) setCentresDeDepots(CdT);
       }
     } catch (e) {
-      toast.error("Erreur lors de la récupération des points de collecte");
+      toast.error("Erreur lors de la récupération des centres de depots");
+    }
+  };
+
+  const defaultCenter = { lat: 36.742173, lng: 10.036566 };
+
+  const getCollectionPoints = async () => {
+    setCollectionPoints([]);
+    try {
+      const docRef = doc(databaseClient, "users", authContext.userId || "");
+
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+
+        const collectionPointsList = data["tournees"] as {
+          agentId: string;
+          pointsDeCollect: PointDeCollect[];
+        }[];
+
+        console.log("collectionPointsList", collectionPointsList);
+        collectionPointsList.forEach((cp) => {
+          cp.pointsDeCollect.forEach((c) => {
+            setCollectionPoints((prev) => [
+              ...prev,
+              { lat: c.lat, lng: c.lng },
+            ]);
+          });
+        });
+      }
+    } catch (e) {
+      toast.error("Erreur lors de la récupération des centres de depots");
     }
   };
 
   useEffect(() => {
-    getPointsDeCollect();
+    getCentresDeDepots();
+    getCollectionPoints();
   }, []);
 
   return defaultCenter ? (
@@ -126,19 +160,30 @@ const GoogleMapVisgl = () => {
       <Map
         style={{ width: "100%", height: "80vh" }}
         defaultCenter={defaultCenter}
-        defaultZoom={16}
+        defaultZoom={9}
         gestureHandling={"greedy"}
         disableDefaultUI={true}
         mapId={"someId"}
         mapTypeId="roadmap"
       >
-        {pointsDeCollect.map((pointDeCollect, idx) => {
-          return <MarkerVisglWrapper key={idx} pointDeCollect={pointDeCollect} />;
+        {centresDeDepots.map((pointDeCollect, idx) => {
+          return (
+            <MarkerVisglWrapper key={idx} pointDeCollect={pointDeCollect} />
+          );
+        })}
+
+        {collectionPoints.map((pointDeCollect, idx) => {
+          return (
+            <CollectionPointsMarker key={idx} pointDeCollect={pointDeCollect} />
+          );
         })}
 
         {trackingPoints.map((point, index) => {
           return (
-            <AdvancedMarker key={index} position={{ lat: point.lat, lng: point.lng }}>
+            <AdvancedMarker
+              key={index}
+              position={{ lat: point.lat, lng: point.lng }}
+            >
               <FaTruckMoving size={30} color="blue" />
             </AdvancedMarker>
           );
@@ -154,7 +199,9 @@ type MarkerVisglWrapperProps = {
   pointDeCollect: PointDeCollect;
 };
 
-const MarkerVisglWrapper: React.FC<MarkerVisglWrapperProps> = ({ pointDeCollect }) => {
+const MarkerVisglWrapper: React.FC<MarkerVisglWrapperProps> = ({
+  pointDeCollect,
+}) => {
   const [infowindowOpen, setInfowindowOpen] = useState(false);
   const [markerRef, marker] = useAdvancedMarkerRef();
 
@@ -167,7 +214,11 @@ const MarkerVisglWrapper: React.FC<MarkerVisglWrapperProps> = ({ pointDeCollect 
       onClick={() => setInfowindowOpen(true)}
     >
       {infowindowOpen && (
-        <InfoWindow anchor={marker} maxWidth={200} onCloseClick={() => setInfowindowOpen(false)}>
+        <InfoWindow
+          anchor={marker}
+          maxWidth={200}
+          onCloseClick={() => setInfowindowOpen(false)}
+        >
           <span
             style={{
               marginRight: "10px",
@@ -180,7 +231,52 @@ const MarkerVisglWrapper: React.FC<MarkerVisglWrapperProps> = ({ pointDeCollect 
           </span>
         </InfoWindow>
       )}
-      <Pin background={"#0f9d58"} borderColor={"#006425"} glyphColor={"#60d98f"} />
+      <Pin
+        background={"#0f9d58"}
+        borderColor={"#006425"}
+        glyphColor={"#60d98f"}
+      />
+    </AdvancedMarker>
+  );
+};
+
+const CollectionPointsMarker: React.FC<MarkerVisglWrapperProps> = ({
+  pointDeCollect,
+}) => {
+  const [infowindowOpen, setInfowindowOpen] = useState(false);
+  const [markerRef, marker] = useAdvancedMarkerRef();
+
+  return (
+    <AdvancedMarker
+      ref={markerRef}
+      key={useId()}
+      position={{ lat: pointDeCollect.lat, lng: pointDeCollect.lng }}
+      title={"AdvancedMarker that opens an Infowindow when clicked."}
+      onClick={() => setInfowindowOpen(true)}
+    >
+      {infowindowOpen && (
+        <InfoWindow
+          anchor={marker}
+          maxWidth={200}
+          onCloseClick={() => setInfowindowOpen(false)}
+        >
+          <span
+            style={{
+              marginRight: "10px",
+              fontSize: "15px",
+              fontWeight: "600",
+              padding: "0",
+            }}
+          >
+            Nom: {pointDeCollect.nom}
+          </span>
+        </InfoWindow>
+      )}
+      <Pin
+        background={"#ff0000"}
+        borderColor={"#ff5555"}
+        glyphColor={"#ffaaaa"}
+      />
     </AdvancedMarker>
   );
 };

@@ -10,12 +10,12 @@ import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { AuthContext } from "../auth/AuthContext";
 
 export const PageAgents = () => {
-  const [show, setShow] = useState(false);
-  const handleClose = () => setShow(false);
-  const handleShow = () => setShow(true);
   const authContext = useContext(AuthContext)!;
-
   const [agents, setAgents] = useState<AgentDocument[]>([]);
+
+  const [show, setShow] = useState(false);
+  const handleShow = () => setShow(true);
+  const handleClose = () => setShow(false);
 
   const getAgents = async () => {
     try {
@@ -47,13 +47,13 @@ export const PageAgents = () => {
 
         const agents = data["agents"] as Agent[];
 
-        const updatedAgents = agents.filter(agent => agent.email !== email);
+        const updatedAgents = agents.filter((agent) => agent.email !== email);
 
         await updateDoc(docRef, {
           agents: updatedAgents,
         });
 
-        setAgents(agents.filter(agent => agent.email !== email));
+        setAgents(agents.filter((agent) => agent.email !== email));
 
         toast.success("agent supprimé avec succès");
       }
@@ -75,7 +75,10 @@ export const PageAgents = () => {
             <Modal.Title>Ajouter Agent</Modal.Title>
           </Modal.Header>
           <Modal.Body>
-            <AjouterAgent hide={handleClose} ajouterAgent={agent => setAgents([...agents, agent])} />
+            <AjouterAgent
+              hide={handleClose}
+              ajouterAgent={(agent) => setAgents([...agents, agent])}
+            />
           </Modal.Body>
         </Modal>
 
@@ -89,7 +92,9 @@ export const PageAgents = () => {
                     <CiUser size={35} className="m-1" />
 
                     <Card.Title>nom: {agent.nom}</Card.Title>
-                    <Card.Subtitle className="mb-2 text-muted">prenom: {agent.prenom}</Card.Subtitle>
+                    <Card.Subtitle className="mb-2 text-muted">
+                      prenom: {agent.prenom}
+                    </Card.Subtitle>
                     <Card.Text>
                       <div>Email: {agent.email}</div>
                       <div>Mot de passe: {agent.motDePasse}</div>

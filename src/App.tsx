@@ -3,7 +3,6 @@ import { Route, Routes } from "react-router-dom";
 import { PageAgents } from "./agents/PageAgents";
 import DashboardNavbar from "./components/navbar";
 import { PageCamions } from "./camions/PageCamions";
-import { PagePointDeCollect } from "./PointDeCollect/PagePointsDeCollect";
 
 import "./app.css";
 import { RoleGuard } from "./auth/AuthGuard";
@@ -14,6 +13,7 @@ import { ListTournees } from "./tournee/ListTournees";
 import { PageTracking } from "./tracking/Tracking";
 import { TourneesRealisees } from "./tourneesRealisees/TourneesRealisees";
 import { Incidents } from "./incident/Incidents";
+import { CentreDeDepot } from "./CentreDeDepot/PagePointsDeCollect";
 
 function App() {
   return (
@@ -30,7 +30,7 @@ function App() {
         <Route
           path="/"
           element={
-            <RoleGuard role="user">
+            <RoleGuard role="superviseur">
               <PageCamions />
             </RoleGuard>
           }
@@ -38,7 +38,7 @@ function App() {
         <Route
           path="/camions"
           element={
-            <RoleGuard role="user">
+            <RoleGuard role="superviseur">
               <PageCamions />
             </RoleGuard>
           }
@@ -46,7 +46,7 @@ function App() {
         <Route
           path="/agents"
           element={
-            <RoleGuard role="user">
+            <RoleGuard role="superviseur">
               <PageAgents />
             </RoleGuard>
           }
@@ -54,8 +54,8 @@ function App() {
         <Route
           path="/pdc"
           element={
-            <RoleGuard role="user">
-              <PagePointDeCollect />
+            <RoleGuard role="superviseur">
+              <CentreDeDepot />
             </RoleGuard>
           }
         />
@@ -78,7 +78,7 @@ function App() {
         <Route
           path="/tournees"
           element={
-            <RoleGuard role="user">
+            <RoleGuard role="superviseur">
               <ListTournees />
             </RoleGuard>
           }
@@ -86,7 +86,7 @@ function App() {
         <Route
           path="/tournees/ajouter"
           element={
-            <RoleGuard role="user">
+            <RoleGuard role="superviseur">
               <Tournee />
             </RoleGuard>
           }
@@ -94,7 +94,7 @@ function App() {
         <Route
           path="/tournees/realisees"
           element={
-            <RoleGuard role="user">
+            <RoleGuard role="superviseur">
               <TourneesRealisees />
             </RoleGuard>
           }
@@ -102,7 +102,7 @@ function App() {
         <Route
           path="/tracking"
           element={
-            <RoleGuard role="user">
+            <RoleGuard role="superviseur">
               <PageTracking />
             </RoleGuard>
           }
@@ -111,7 +111,7 @@ function App() {
         <Route
           path="/incidents"
           element={
-            <RoleGuard role="user">
+            <RoleGuard role="superviseur">
               <Incidents />
             </RoleGuard>
           }

@@ -7,9 +7,16 @@ import toast from "react-hot-toast";
 import { IoMdRemoveCircleOutline } from "react-icons/io";
 import { AuthContext } from "../auth/AuthContext";
 
-import { APIProvider, AdvancedMarker, InfoWindow, Map, Pin, useAdvancedMarkerRef } from "@vis.gl/react-google-maps";
+import {
+  APIProvider,
+  AdvancedMarker,
+  InfoWindow,
+  Map,
+  Pin,
+  useAdvancedMarkerRef,
+} from "@vis.gl/react-google-maps";
 
-export const PagePointDeCollect = () => {
+export const CentreDeDepot = () => {
   return (
     <>
       <div
@@ -25,7 +32,7 @@ export const PagePointDeCollect = () => {
             marginBottom: "20px",
           }}
         >
-          <h3 className="mt-3 text-center">La Liste Des Points De Collect</h3>
+          <h3 className="mt-3 text-center">Centres De Depots et CET</h3>
         </div>
         <GoogleMapVisgl />
       </div>
@@ -34,11 +41,8 @@ export const PagePointDeCollect = () => {
 };
 
 const GoogleMapVisgl = () => {
-  const [defaultCenter, setDefaultCenter] = useState<{
-    lat: number;
-    lng: number;
-  } | null>(null);
-  const [newCollectionPoint, setNewCollectionPoint] = useState<PointDeCollect | null>(null);
+  const [newCollectionPoint, setNewCollectionPoint] =
+    useState<PointDeCollect | null>(null);
 
   const [pointsDeCollect, setPointsDeCollect] = useState<PointDeCollect[]>([]);
 
@@ -49,7 +53,7 @@ const GoogleMapVisgl = () => {
   };
 
   const removeCollectionPoint = (name: string) => {
-    setPointsDeCollect(pointsDeCollect.filter(p => p.nom !== name));
+    setPointsDeCollect(pointsDeCollect.filter((p) => p.nom !== name));
   };
 
   const getPointsDeCollect = async () => {
@@ -61,23 +65,14 @@ const GoogleMapVisgl = () => {
       if (docSnap.exists()) {
         const data = docSnap.data();
 
-        const collectionPoints = data["pointsDeCollect"] as PointDeCollect[];
+        const collectionPoints = data["centresDeDepots"] as PointDeCollect[];
 
-        const placeCoords = data["ville"] as {
-          lat: number;
-          lng: number;
-          nom: string;
-        };
+        console.log(collectionPoints);
 
-        setDefaultCenter({
-          lat: placeCoords.lat,
-          lng: placeCoords.lng,
-        });
-
-        setPointsDeCollect(collectionPoints);
+        if (collectionPoints) setPointsDeCollect(collectionPoints);
       }
     } catch (e) {
-      toast.error("Erreur lors de la récupération des points de collecte");
+      toast.error("Erreur lors de la récupération des centres de depots");
     }
   };
 
@@ -85,17 +80,19 @@ const GoogleMapVisgl = () => {
     getPointsDeCollect();
   }, []);
 
+  const defaultCenter = { lat: 36.742173, lng: 10.036566 };
+
   return defaultCenter ? (
     <APIProvider apiKey={"AIzaSyDXdXXNJTBEKGgZWNm-bYhrUDz6_3gysTY"}>
       <Map
         style={{ width: "100%", height: "80vh" }}
         defaultCenter={defaultCenter}
-        defaultZoom={16}
+        defaultZoom={9}
         gestureHandling={"greedy"}
         disableDefaultUI={true}
         mapId={"someId"}
         mapTypeId="hybrid"
-        onClick={e => {
+        onClick={(e) => {
           if (e.detail.latLng)
             setNewCollectionPoint({
               lat: e.detail.latLng?.lat,
@@ -103,12 +100,20 @@ const GoogleMapVisgl = () => {
             });
         }}
       >
-        {pointsDeCollect.map(pointDeCollect => {
-          return <MarkerVisglWrapper deleteCollectionPoint={removeCollectionPoint} pointDeCollect={pointDeCollect} />;
+        {pointsDeCollect.map((pointDeCollect) => {
+          return (
+            <MarkerVisglWrapper
+              deleteCollectionPoint={removeCollectionPoint}
+              pointDeCollect={pointDeCollect}
+            />
+          );
         })}
 
         {newCollectionPoint && (
-          <NewCollectionPointMarker pointDeCollect={newCollectionPoint} addCollectionPoint={ajouterPointDeCollect} />
+          <NewCollectionPointMarker
+            pointDeCollect={newCollectionPoint}
+            addCollectionPoint={ajouterPointDeCollect}
+          />
         )}
       </Map>
     </APIProvider>
@@ -122,7 +127,10 @@ type MarkerVisglWrapperProps = {
   deleteCollectionPoint: (id: string) => void;
 };
 
-const MarkerVisglWrapper: React.FC<MarkerVisglWrapperProps> = ({ pointDeCollect, deleteCollectionPoint }) => {
+const MarkerVisglWrapper: React.FC<MarkerVisglWrapperProps> = ({
+  pointDeCollect,
+  deleteCollectionPoint,
+}) => {
   const [infowindowOpen, setInfowindowOpen] = useState(false);
   const [markerRef, marker] = useAdvancedMarkerRef();
   const authContext = useContext(AuthContext)!;
@@ -136,20 +144,22 @@ const MarkerVisglWrapper: React.FC<MarkerVisglWrapperProps> = ({ pointDeCollect,
       if (docSnap.exists()) {
         const data = docSnap.data();
 
-        const collectionPoints = data["pointsDeCollect"] as PointDeCollect[];
+        const collectionPoints = data["centresDeDepots"] as PointDeCollect[];
 
-        const updatedCollectionPoints = collectionPoints.filter(collectionPoint => collectionPoint.nom !== name);
+        const updatedCollectionPoints = collectionPoints.filter(
+          (collectionPoint) => collectionPoint.nom !== name,
+        );
 
         await updateDoc(docRef, {
-          pointsDeCollect: updatedCollectionPoints,
+          centresDeDepots: updatedCollectionPoints,
         });
 
         deleteCollectionPoint(pointDeCollect.nom || "");
 
-        toast.success("Camion supprimé avec succès");
+        toast.success("Centre de depots supprimé avec succès");
       }
     } catch {
-      toast.error("Erreur lors de la suppression du camion");
+      toast.error("Erreur lors de la suppression du centre de depots");
     }
   };
 
@@ -162,7 +172,11 @@ const MarkerVisglWrapper: React.FC<MarkerVisglWrapperProps> = ({ pointDeCollect,
       onClick={() => setInfowindowOpen(true)}
     >
       {infowindowOpen && (
-        <InfoWindow anchor={marker} maxWidth={200} onCloseClick={() => setInfowindowOpen(false)}>
+        <InfoWindow
+          anchor={marker}
+          maxWidth={200}
+          onCloseClick={() => setInfowindowOpen(false)}
+        >
           <span
             style={{
               marginRight: "10px",
@@ -181,7 +195,11 @@ const MarkerVisglWrapper: React.FC<MarkerVisglWrapperProps> = ({ pointDeCollect,
           />
         </InfoWindow>
       )}
-      <Pin background={"#0f9d58"} borderColor={"#006425"} glyphColor={"#60d98f"} />
+      <Pin
+        background={"#0f9d58"}
+        borderColor={"#006425"}
+        glyphColor={"#60d98f"}
+      />
     </AdvancedMarker>
   );
 };
@@ -191,7 +209,10 @@ type NewCollectionPointMarkerProps = {
   addCollectionPoint: (collectionPoint: PointDeCollect) => void;
 };
 
-const NewCollectionPointMarker: React.FC<NewCollectionPointMarkerProps> = ({ pointDeCollect, addCollectionPoint }) => {
+const NewCollectionPointMarker: React.FC<NewCollectionPointMarkerProps> = ({
+  pointDeCollect,
+  addCollectionPoint,
+}) => {
   const [infowindowOpen, setInfowindowOpen] = useState(false);
   const [markerRef, marker] = useAdvancedMarkerRef();
   const [name, setName] = useState<string>("");
@@ -201,12 +222,12 @@ const NewCollectionPointMarker: React.FC<NewCollectionPointMarkerProps> = ({ poi
     const user = authContext.userId;
 
     if (!user) {
-      toast.error("Erreur lors de l'ajout du camion");
+      toast.error("Erreur lors de l'ajout du centre de depots");
       return;
     }
 
     await updateDoc(doc(databaseClient, "users", user), {
-      pointsDeCollect: arrayUnion({
+      centresDeDepots: arrayUnion({
         lat: pointDeCollect.lat,
         lng: pointDeCollect.lng,
         nom: name,
@@ -222,10 +243,10 @@ const NewCollectionPointMarker: React.FC<NewCollectionPointMarkerProps> = ({ poi
         setName("");
 
         setInfowindowOpen(false);
-        toast.success("Camion ajouté avec succès");
+        toast.success("Centre de depots ajouté avec succès");
       })
       .catch(() => {
-        toast.error("Erreur lors de l'ajout du camion");
+        toast.error("Erreur lors de l'ajout du centre de depots");
       });
   };
 
@@ -246,7 +267,7 @@ const NewCollectionPointMarker: React.FC<NewCollectionPointMarkerProps> = ({ poi
         <InfoWindow anchor={marker} minWidth={400}>
           <Form.Control
             value={name}
-            onChange={e => setName(e.target.value)}
+            onChange={(e) => setName(e.target.value)}
             type="text"
             placeholder="Nom du point de collect"
             id="name"
@@ -265,7 +286,11 @@ const NewCollectionPointMarker: React.FC<NewCollectionPointMarkerProps> = ({ poi
           </Button>
         </InfoWindow>
       )}
-      <Pin background={"#ff0000"} borderColor={"#ff4433"} glyphColor={"#E34234"} />
+      <Pin
+        background={"#ff0000"}
+        borderColor={"#ff4433"}
+        glyphColor={"#E34234"}
+      />
     </AdvancedMarker>
   );
 };

@@ -59,7 +59,7 @@ function DashboardNavbar() {
                 </NavDropdown.Item>
               </NavDropdown>
             )}
-            {authContext.role === "user" && (
+            {authContext.role === "superviseur" && (
               <>
                 <Nav.Link className="me-3" onClick={() => navigate("/camions")}>
                   <FaTruck className="me-2" />
@@ -71,7 +71,7 @@ function DashboardNavbar() {
                 </Nav.Link>
                 <Nav.Link className="me-3" onClick={() => navigate("/pdc")}>
                   <FaMapMarkerAlt className="me-2" />
-                  Points De Collect
+                  Centres De Depots
                 </Nav.Link>
                 <Nav.Link
                   className="me-3"
@@ -100,7 +100,7 @@ function DashboardNavbar() {
                   onClick={() => navigate("/incidents")}
                 >
                   <HiOutlineLocationMarker className="me-2" />
-                  Incidents 
+                  Incidents
                 </Nav.Link>
               </>
             )}

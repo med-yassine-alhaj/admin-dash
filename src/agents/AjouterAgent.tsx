@@ -5,14 +5,23 @@ import { Agent, AgentDocument } from "./types";
 import { AuthContext } from "../auth/AuthContext";
 import { authClient, databaseClient } from "../firebaseConfig";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { addDoc, arrayUnion, collection, doc, updateDoc } from "firebase/firestore";
+import {
+  addDoc,
+  arrayUnion,
+  collection,
+  doc,
+  updateDoc,
+} from "firebase/firestore";
 
 type AjouterAgentProps = {
   ajouterAgent: (agent: AgentDocument) => void;
   hide: () => void;
 };
 
-export const AjouterAgent: React.FC<AjouterAgentProps> = ({ ajouterAgent, hide }) => {
+export const AjouterAgent: React.FC<AjouterAgentProps> = ({
+  ajouterAgent,
+  hide,
+}) => {
   const authContext = useContext(AuthContext)!;
   const [agent, setAgent] = React.useState<Agent>({
     nom: "",
@@ -21,6 +30,7 @@ export const AjouterAgent: React.FC<AjouterAgentProps> = ({ ajouterAgent, hide }
     email: "",
     telephone: "",
     motDePasse: "",
+    role: "agent",
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -34,11 +44,15 @@ export const AjouterAgent: React.FC<AjouterAgentProps> = ({ ajouterAgent, hide }
     const user = authContext.userId;
 
     if (!user) {
-      toast.error("Erreur lors de l'ajout du camion");
+      toast.error("Erreur lors de l'ajout du agent");
       return;
     }
 
-    const data = await createUserWithEmailAndPassword(authClient, agent.email, agent.motDePasse);
+    const data = await createUserWithEmailAndPassword(
+      authClient,
+      agent.email,
+      agent.motDePasse,
+    );
 
     // FIXME : use this to fetch data later
     await addDoc(collection(databaseClient, "agents"), {
@@ -57,11 +71,11 @@ export const AjouterAgent: React.FC<AjouterAgentProps> = ({ ajouterAgent, hide }
         ajouterAgent({
           ...agent,
         });
-        toast.success("Camion ajouté avec succès");
+        toast.success("Agent ajouté avec succès");
         hide();
       })
       .catch(() => {
-        toast.error("Erreur lors de l'ajout du camion");
+        toast.error("Erreur lors de l'ajout du agent");
       });
   };
 
@@ -89,7 +103,7 @@ export const AjouterAgent: React.FC<AjouterAgentProps> = ({ ajouterAgent, hide }
       </Form.Group>
       <Form.Group className="mb-3" controlId="motDePasse">
         <Form.Label>Mot De Passe</Form.Label>
-        <Form.Control onChange={handleChange} type="text" />
+        <Form.Control onChange={handleChange} type="password" />
       </Form.Group>
       <Button
         style={{

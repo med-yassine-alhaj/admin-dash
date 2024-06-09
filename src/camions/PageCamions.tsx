@@ -18,6 +18,7 @@ export const PageCamions = () => {
 
   const [camions, setCamions] = useState<CamionDocument[]>([]);
 
+
   const ajouterCamion = (camion: CamionDocument) => {
     setCamions([...camions, camion]);
   };

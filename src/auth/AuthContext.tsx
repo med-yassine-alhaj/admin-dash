@@ -15,11 +15,11 @@ import { useNavigate } from "react-router-dom";
 type AuthContextProps = {
   userId: string;
   user: User | null;
-  role: "admin" | "user" | "_";
-loading: boolean;
+  role: "admin" | "superviseur" | "_";
+  loading: boolean;
   loginUser: (email: string, password: string) => Promise<UserCredential>;
   logOut: () => Promise<void>;
-  setRole: (role: "admin" | "user") => void;
+  setRole: (role: "admin" | "superviseur") => void;
   setAuthUserId: (id: string) => void;
   loadAuth: () => void;
 };
@@ -31,7 +31,7 @@ type AuthProviderProps = {
 const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [role, setRole] = useState<"admin" | "user" | "_">("_");
+  const [role, setRole] = useState<"admin" | "superviseur" | "_">("_");
   const [userId, setUserId] = useState<string>("");
   const navigate = useNavigate();
 
@@ -39,10 +39,6 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setLoading(true);
     return signInWithEmailAndPassword(authClient, email, password);
   };
-
-  useEffect(() => {
-    console.log("Role changed to: ", role);
-  }, [role]);
 
   const logOut = async () => {
     setLoading(true);
@@ -53,7 +49,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     navigate("/login");
   };
 
-  const setUserRole = (role: "admin" | "user") => {
+  const setUserRole = (role: "admin" | "superviseur") => {
     setRole(role);
   };
 
@@ -96,12 +92,15 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         where("id", "==", currentUser?.uid),
       );
 
-      await getDocs(docSnap).then((querySnapshot) => {
-        if (querySnapshot.empty) {
+      getDocs(docSnap).then((querySnapshot) => {
+        if (querySnapshot.docs[0].data().role === "admin") {
           setRole("admin");
-        } else {
-          setRole("user");
           setAuthUserId(querySnapshot.docs[0].id);
+          return;
+        } else if (querySnapshot.docs[0].data().role === "superviseur") {
+          setRole("superviseur");
+          setAuthUserId(querySnapshot.docs[0].id);
+          return;
         }
       });
 

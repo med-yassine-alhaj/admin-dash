@@ -3,25 +3,61 @@ import { Button, Form } from "react-bootstrap";
 import { AuthContext } from "../auth/AuthContext";
 import { databaseClient } from "../firebaseConfig";
 import { Agent, AgentDocument } from "../agents/types";
-import { PointDeCollect } from "../PointDeCollect/types";
-import { useContext, useEffect, useId, useState } from "react";
-import { addDoc, arrayUnion, collection, doc, getDoc, updateDoc } from "firebase/firestore";
-import { APIProvider, AdvancedMarker, Map, Pin } from "@vis.gl/react-google-maps";
+import { useContext, useEffect, useState } from "react";
+import {
+  addDoc,
+  arrayUnion,
+  collection,
+  doc,
+  getDoc,
+  updateDoc,
+} from "firebase/firestore";
+import {
+  APIProvider,
+  AdvancedMarker,
+  Map,
+  Pin,
+} from "@vis.gl/react-google-maps";
+import { Camion, CamionDocument } from "../camions/type";
+import { PointDeCollect } from "../CentreDeDepot/types";
+import { useNavigate } from "react-router-dom";
 
 export const Tournee = () => {
+  const navigate = useNavigate();
   const [agents, setAgents] = useState<AgentDocument[]>([]);
   const [selectedAgentId, setSelectedAgentId] = useState<string>("");
+  const [selectedCamionMatricule, setSelectedCamionMatricule] =
+    useState<string>("");
+
   const [agentName, setAgentName] = useState<string>("");
 
   const authContext = useContext(AuthContext)!;
 
-  const [selected, setSelected] = useState<PointDeCollect[]>([]);
-  const addCollectionPoint = (collectionPoint: PointDeCollect) => {
-    if (selected.find(p => p.nom === collectionPoint.nom)) {
-      setSelected(selected.filter(p => p.nom !== collectionPoint.nom));
-      return;
+  const [collectionPoints, setCollectionPoints] = useState<
+    {
+      lat: number;
+      lng: number;
+    }[]
+  >([]);
+
+  const [centresDeDepots, setCentresDeDepots] = useState<PointDeCollect[]>([]);
+
+  const getPointsDeCollect = async () => {
+    try {
+      const docRef = doc(databaseClient, "users", authContext.userId || "");
+
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+
+        const CdT = data["centresDeDepots"] as PointDeCollect[];
+
+        if (collectionPoints) setCentresDeDepots(CdT);
+      }
+    } catch (e) {
+      toast.error("Erreur lors de la récupération des centres de depots");
     }
-    setSelected(prev => [...prev, collectionPoint]);
   };
 
   const createTournee = async () => {
@@ -32,7 +68,8 @@ export const Tournee = () => {
         tournees: arrayUnion({
           agentId: selectedAgentId,
           agentName: agentName,
-          pointsDeCollect: selected,
+          camionMatricule: selectedCamionMatricule,
+          pointsDeCollect: collectionPoints,
           supervisorId: authContext.userId,
         }),
       });
@@ -40,13 +77,14 @@ export const Tournee = () => {
       await addDoc(collection(databaseClient, "tournees"), {
         agentId: selectedAgentId,
         agentName: agentName,
-        pointsDeCollect: selected,
+        camionMatricule: selectedCamionMatricule,
+        pointsDeCollect: collectionPoints,
         supervisorId: authContext.userId,
       });
 
       toast.success("Tournée créée avec succès");
+      navigate("/tournees");
     } catch (e) {
-      console.log(e);
       toast.error("Erreur lors de la création de la tournée");
     }
   };
@@ -68,8 +106,30 @@ export const Tournee = () => {
     }
   };
 
+  const [camions, setCamions] = useState<CamionDocument[]>([]);
+
+  const getCamions = async () => {
+    try {
+      const docRef = doc(databaseClient, "users", authContext.userId || "");
+
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+
+        const camions = data["camions"] as Camion[];
+
+        setCamions(camions);
+      }
+    } catch (e) {
+      toast.error("Erreur lors de la récupération des camions");
+    }
+  };
+
   useEffect(() => {
     getAgents();
+    getCamions();
+    getPointsDeCollect();
   }, []);
 
   return (
@@ -92,20 +152,43 @@ export const Tournee = () => {
           Choisir les agents
         </p>
         <Form.Select
-          onChange={e => {
-            console.log(e.target.value);
+          onChange={(e) => {
             if (e.target.value === "Choisir un agent") {
               return;
             }
-            setSelectedAgentId(agents.find(agent => agent.nom === e.target.value)?.id || "");
+            setSelectedAgentId(
+              agents.find((agent) => agent.nom === e.target.value)?.id || "",
+            );
             setAgentName(e.target.value);
           }}
           size="sm"
         >
           <option selected>Choisir un agent</option>
-          {agents.map(agent => (
-            <option>{agent.nom}</option>
-          ))}
+          {agents?.map((agent) => <option>{agent.nom}</option>)}
+        </Form.Select>
+
+        <p
+          style={{
+            fontSize: "16px",
+            marginBottom: "10px",
+          }}
+        >
+          Choisir un camion
+        </p>
+        <Form.Select
+          onChange={(e) => {
+            if (e.target.value === "Choisir un camion") {
+              return;
+            }
+            setSelectedCamionMatricule(
+              camions.find((camion) => camion.matricule === e.target.value)
+                ?.matricule || "",
+            );
+          }}
+          size="sm"
+        >
+          <option selected>Choisir un camion</option>
+          {camions?.map((camion) => <option>{camion.matricule}</option>)}
         </Form.Select>
       </div>
       <div
@@ -125,7 +208,11 @@ export const Tournee = () => {
         >
           Choisir les points de collect
         </p>
-        <GoogleMapVisgl addCollectionPoint={addCollectionPoint} selected={selected} />
+        <GoogleMapVisgl
+          pointsDeCollect={collectionPoints}
+          setPointsDeCollect={setCollectionPoints}
+          centresDeDepots={centresDeDepots}
+        />
       </div>
       <div
         style={{
@@ -149,94 +236,73 @@ export const Tournee = () => {
 };
 
 const GoogleMapVisgl: React.FC<{
-  addCollectionPoint: (collectionPoint: PointDeCollect) => void;
-  selected: PointDeCollect[];
-}> = ({ addCollectionPoint, selected }) => {
-  const [defaultCenter, setDefaultCenter] = useState<{
+  pointsDeCollect: PointDeCollect[];
+  setPointsDeCollect: React.Dispatch<React.SetStateAction<PointDeCollect[]>>;
+  centresDeDepots: PointDeCollect[];
+}> = ({ pointsDeCollect, setPointsDeCollect, centresDeDepots }) => {
+  const defaultCenter = { lat: 36.742173, lng: 10.036566 };
+
+  const addCollectionPoint = (collectionPoint: {
     lat: number;
     lng: number;
-  } | null>(null);
-
-  const [pointsDeCollect, setPointsDeCollect] = useState<PointDeCollect[]>([]);
-
-  const authContext = useContext(AuthContext)!;
-
-  const getPointsDeCollect = async () => {
-    try {
-      const docRef = doc(databaseClient, "users", authContext.userId || "");
-
-      const docSnap = await getDoc(docRef);
-
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-
-        const collectionPoints = data["pointsDeCollect"] as PointDeCollect[];
-
-        const placeCoords = data["ville"] as {
-          lat: number;
-          lng: number;
-          nom: string;
-        };
-
-        setDefaultCenter({
-          lat: placeCoords.lat,
-          lng: placeCoords.lng,
-        });
-
-        setPointsDeCollect(collectionPoints);
-      }
-    } catch (e) {
-      toast.error("Erreur lors de la récupération des points de collecte");
-    }
+  }) => {
+    setPointsDeCollect([...pointsDeCollect, collectionPoint]);
   };
 
-  useEffect(() => {
-    getPointsDeCollect();
-  }, []);
+  const removeCollectionPoint = (collectionPoint: {
+    lat: number;
+    lng: number;
+  }) => {
+    setPointsDeCollect(
+      pointsDeCollect.filter(
+        (p) => p.lat !== collectionPoint.lat && p.lng !== collectionPoint.lng,
+      ),
+    );
+  };
 
-  return defaultCenter ? (
+  return (
     <APIProvider apiKey={"AIzaSyDXdXXNJTBEKGgZWNm-bYhrUDz6_3gysTY"}>
       <Map
         style={{ width: "100%", height: "80vh" }}
         defaultCenter={defaultCenter}
-        defaultZoom={16}
+        defaultZoom={9}
         gestureHandling={"greedy"}
         disableDefaultUI={true}
         mapId={"someId"}
         mapTypeId="hybrid"
+        onClick={(e) => {
+          if (e.detail.latLng)
+            addCollectionPoint({
+              lat: e.detail.latLng?.lat,
+              lng: e.detail.latLng?.lng,
+            });
+        }}
       >
-        {pointsDeCollect.map(pointDeCollect => {
-          return <MarkerVisglWrapper pointDeCollect={pointDeCollect} addCollectionPoint={addCollectionPoint} />;
-        })}
+        {pointsDeCollect?.map((point, index) => (
+          <AdvancedMarker
+            key={index}
+            position={{ lat: point.lat, lng: point.lng }}
+            onClick={() => {
+              removeCollectionPoint(point);
+            }}
+          >
+            <Pin />
+          </AdvancedMarker>
+        ))}
 
-        {selected.map(selectedPoint => {
-          return (
-            <MarkerVisglWrapper
-              color="#ff7900"
-              pointDeCollect={selectedPoint}
-              addCollectionPoint={addCollectionPoint}
+        {centresDeDepots?.map((point, index) => (
+          <AdvancedMarker
+            key={index}
+            position={{ lat: point.lat, lng: point.lng }}
+          >
+            <Pin
+              background={"#0f9d58"}
+              borderColor={"#006425"}
+              glyphColor={"#60d98f"}
             />
-          );
-        })}
+          </AdvancedMarker>
+        ))}
       </Map>
     </APIProvider>
-  ) : (
-    ""
-  );
-};
-
-const MarkerVisglWrapper: React.FC<{
-  pointDeCollect: PointDeCollect;
-  addCollectionPoint: (collectionPoint: PointDeCollect) => void;
-  color?: string;
-}> = ({ pointDeCollect, addCollectionPoint, color }) => {
-  return (
-    <AdvancedMarker
-      key={useId()}
-      position={{ lat: pointDeCollect.lat, lng: pointDeCollect.lng }}
-      onClick={() => addCollectionPoint(pointDeCollect)}
-    >
-      <Pin background={color || "#0f9d58"} borderColor={"#006425"} glyphColor={"#60d98f"} />
-    </AdvancedMarker>
   );
 };
