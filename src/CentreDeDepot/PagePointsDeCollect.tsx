@@ -269,7 +269,7 @@ const NewCollectionPointMarker: React.FC<NewCollectionPointMarkerProps> = ({
             value={name}
             onChange={(e) => setName(e.target.value)}
             type="text"
-            placeholder="Nom du point de collect"
+            placeholder="Nom du centre "
             id="name"
             name="name"
             autoComplete="off"

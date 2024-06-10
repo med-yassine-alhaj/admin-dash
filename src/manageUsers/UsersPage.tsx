@@ -92,7 +92,7 @@ export const UsersPage = () => {
     <div className="mt-5">
       <Modal show={show} onHide={handleClose}>
         <Modal.Header closeButton>
-          <Modal.Title>Modider Utilisateur</Modal.Title>
+          <Modal.Title>Modifier Utilisateur</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           {selectedAgent && (
