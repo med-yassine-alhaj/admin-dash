@@ -37,118 +37,6 @@ type TourneeRealisee = {
   agentPrenom?: string;
 };
 
-type User = {
-  nom: string;
-  prenom: string;
-  email: string;
-  password: string;
-  ville: string;
-  role: "superviseur";
-};
-
-type ImprimerRapportProps = {
-  id: string;
-  handleClose: () => void;
-  startDate: Date;
-  endDate: Date;
-  images: number;
-};
-
-const ImprimerRapport: React.FC<ImprimerRapportProps> = ({
-  id,
-  images,
-  startDate,
-  endDate,
-  handleClose,
-}) => {
-  const [tournee, setTournee] = useState<Tournee | null>(null);
-  const [agent, setAgent] = useState<Agent | null>(null);
-  const [user, setUser] = useState<User | null>(null);
-
-  const getTournee = async (id: string) => {
-    const tourneeCollection = collection(databaseClient, "tournees");
-    const docSnap = query(tourneeCollection, where("agentId", "==", id));
-
-    const doc = await getDocs(docSnap);
-    const currentTournee = doc.docs[0].data() as Tournee;
-    setTournee(currentTournee);
-
-    const agentCollection = collection(databaseClient, "agents");
-    const agentSnap = query(agentCollection, where("id", "==", currentTournee.agentId));
-    const agentDoc = await getDocs(agentSnap);
-    const currentAgent = agentDoc.docs[0].data() as Agent;
-    setAgent(currentAgent);
-
-    const usersCollection = collection(databaseClient, "users");
-    const userQuery = query(usersCollection, where(documentId(), "==", currentTournee.supervisorId));
-    const userDoc = await getDocs(userQuery);
-    const currentUser = userDoc.docs[0].data() as User;
-    setUser(currentUser);
-  };
-
-  useEffect(() => {
-    if (id) getTournee(id);
-  }, [id]);
-
-  useEffect(() => {
-    console.log(tournee);
-  }, [tournee]);
-
-  return (
-    <>
-      {tournee && agent ? (
-        <div className="container">
-          <div className="table-responsive">
-            <table className="table table-bordered">
-              <tbody>
-                <tr>
-                  <th>Date de début:</th>
-                  <td>{startDate.toLocaleString()}</td>
-                </tr>
-                <tr>
-                  <th>Date de fin:</th>
-                  <td>{endDate.toLocaleString()}</td>
-                </tr>
-                <tr>
-                  <th>Agent:</th>
-                  <td>
-                    {agent.nom} {agent.prenom}
-                  </td>
-                </tr>
-                <tr>
-                  <th>Matricule du camion:</th>
-                  <td>{tournee.camionMatricule}</td>
-                </tr>
-                <tr>
-                  <th>Superviseur:</th>
-                  <td>
-                    {user?.nom} {user?.prenom}
-                  </td>
-                </tr>
-                <tr>
-                  <th>Images Prises:</th>
-                  <td>{images}</td>
-                </tr>
-                <tr>
-                  <th>Points de Collecte:</th>
-                  <td>{tournee.pointsDeCollect.length}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <div className="text-center mt-4">
-            <button className="btn btn-primary" onClick={() => window.print()}>
-              Imprimer
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="text-center">Chargement...</div>
-      )}
-    </>
-  );
-};
-
 export const TourneesRealisees = () => {
   const [show, setShow] = useState(false);
   const handleShow = () => setShow(true);
@@ -159,7 +47,11 @@ export const TourneesRealisees = () => {
   const [endDate, setEndDate] = useState<Date | null>(new Date());
   const authContext = useContext(AuthContext)!;
 
-  const [tourneesRealisees, setTourneesRealisees] = useState<TourneeRealisee[]>([]);
+  const [tourneesRealisees, setTourneesRealisees] = useState<TourneeRealisee[]>(
+    [],
+  );
+
+  // const authContext = useContext(AuthContext)!;
 
   const getTournees = async () => {
     const usersCollection = collection(databaseClient, "tourneesRealisees");
@@ -173,10 +65,10 @@ export const TourneesRealisees = () => {
       if (querySnapshot.empty) {
         toast.error("Aucune tournée realisée trouvée");
       } else {
-        querySnapshot.docs.forEach((doc) => {
+        querySnapshot.docs.map((doc) => {
           const currentTournee = doc.data() as TourneeRealisee;
           currentTournee.images = [];
-          currentTournee.id = doc.id;
+          currentTournee.id = doc.data().id;
           setTourneesRealisees((prev) => [...prev, currentTournee]);
         });
       }
@@ -190,7 +82,9 @@ export const TourneesRealisees = () => {
 
         setTourneesRealisees((prev) => {
           const newTournees = prev.map((tournee) => {
+            console.log(tournee);
             if (tournee.id === currentImage.tourneeId) {
+              console.log("bingo");
               return {
                 ...tournee,
                 images: [...tournee.images, currentImage.imageUrl],
@@ -337,5 +231,115 @@ export const TourneesRealisees = () => {
         </Row>
       </Container>
     </div>
+  );
+};
+
+type User = {
+  nom: string;
+  prenom: string;
+  email: string;
+  password: string;
+  ville: string;
+  role: "superviseur";
+};
+
+const ImprimerRapport: React.FC<{
+  id: string;
+  handleClose: () => void;
+  startDate: Date;
+  endDate: Date;
+  images: number;
+}> = ({ id, images, startDate, endDate }) => {
+  const [tournee, setTournee] = useState<Tournee | null>(null);
+  const [agent, setAgent] = useState<Agent | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+
+  const getTournee = async (id: string) => {
+    const tournee = collection(databaseClient, "tournees");
+    const docSnap = query(tournee, where("agentId", "==", id));
+
+    const doc = await getDocs(docSnap);
+    const currentTournee = doc.docs[0].data() as Tournee;
+    setTournee(currentTournee);
+
+    const agent = collection(databaseClient, "agents");
+    const agentSnap = query(agent, where("id", "==", currentTournee.agentId));
+    const agentDoc = await getDocs(agentSnap);
+    const currentAgent = agentDoc.docs[0].data() as Agent;
+    setAgent(currentAgent);
+
+    //get the user from database using the supervisorId
+    const booksRef = collection(databaseClient, "users");
+
+    const q = query(
+      booksRef,
+      where(documentId(), "==", currentTournee.supervisorId),
+    );
+
+    const userDoc = await getDocs(q);
+    const currentUser = userDoc.docs[0].data() as User;
+    setUser(currentUser);
+  };
+
+  useEffect(() => {
+    if (id) getTournee(id);
+  }, []);
+
+  useEffect(() => {
+    console.log(tournee);
+  }, [tournee]);
+
+  return (
+    <>
+      {tournee && agent ? (
+        <div className="container">
+          <div className="table-responsive">
+            <table className="table table-bordered">
+              <tbody>
+                <tr>
+                  <th>Date de début:</th>
+                  <td>{startDate.toLocaleString()}</td>
+                </tr>
+                <tr>
+                  <th>Date de fin:</th>
+                  <td>{endDate.toLocaleString()}</td>
+                </tr>
+                <tr>
+                  <th>Agent:</th>
+                  <td>
+                    {agent.nom} {agent.prenom}
+                  </td>
+                </tr>
+                <tr>
+                  <th>Matricule du camion:</th>
+                  <td>{tournee.camionMatricule}</td>
+                </tr>
+                <tr>
+                  <th>Superviseur:</th>
+                  <td>
+                    {user?.nom} {user?.prenom}
+                  </td>
+                </tr>
+                <tr>
+                  <th>Images Prises:</th>
+                  <td>{images}</td>
+                </tr>
+                <tr>
+                  <th>Points de Collecte:</th>
+                  <td>{tournee.pointsDeCollect.length}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div className="text-center mt-4">
+            <button className="btn btn-primary" onClick={() => window.print()}>
+              Imprimer
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="text-center">Chargement...</div>
+      )}
+    </>
   );
 };
